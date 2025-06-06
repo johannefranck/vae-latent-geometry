@@ -1,0 +1,10 @@
+vae:
+  latent_dim: 2
+  input_dim: 50
+training:
+  epochs: 30
+  lr: 0.001
+  batch_size: 64
+geodesics:
+  k_neighbors: 70
+  num_pairs: 25
