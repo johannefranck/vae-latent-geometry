@@ -28,6 +28,7 @@ class VAE(nn.Module):
 
 
 def loss_fn(x, x_recon, mu, logvar):
+    """Normalized!"""
     recon_loss = nn.MSELoss()(x_recon, x)
     kl = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / x.size(0)
     return recon_loss + kl

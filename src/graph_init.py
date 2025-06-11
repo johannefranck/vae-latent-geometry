@@ -290,6 +290,7 @@ def main():
 
     # The grid is synthetic; labels are only used for visualization
     grid, grid_shape = create_latent_grid_from_data(latents, n_points_per_axis=50)
+    np.save("src/artifacts/grid.npy", grid.cpu().numpy())
     graph = build_grid_graph(grid, k=8)
 
     index_pairs = select_label_representatives(latents, labels, n_labels=10, seed=12)
@@ -335,7 +336,7 @@ def main():
     # Print shape of each path in latent space
     for i, path in enumerate(all_paths):
         path_coords = grid[path]
-        print(f"Path {i} shape: {path_coords.shape}")  # e.g. (23, 2)
+        print(f"Path {i} shape: {path_coords.shape}")
 
     # summary
     lengths = [len(p) for p in all_paths]

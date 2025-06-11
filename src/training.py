@@ -6,7 +6,7 @@ import numpy as np
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from src.vae import VAE, loss_fn
 from src.plotting import plot_latent_space  
 
@@ -49,8 +49,17 @@ def main():
     colors = np.load(os.path.join(DATA_DIR, "tasic-colors.npy"))
 
     data_tensor = torch.tensor(data, dtype=torch.float32).to(device)
-    data_loader = DataLoader(data_tensor, batch_size=BATCH_SIZE, shuffle=True)
 
+    # Split data into training and validation sets
+    VAL_RATIO = 0.1
+    n_val = int(len(data_tensor) * VAL_RATIO)
+    n_train = len(data_tensor) - n_val
+    train_dataset, val_dataset = random_split(data_tensor, [n_train, n_val], generator=torch.Generator().manual_seed(SEED))
+
+    # Data Loaders
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    print(f"Training set size: {len(train_dataset)}, Validation set size: {len(val_dataset)}")
     print(f"Data shape: {data.shape}, Labels shape: {labels.shape}, Colors: {colors.shape}")
 
 
@@ -58,15 +67,19 @@ def main():
     vae = VAE(input_dim=INPUT_DIM, latent_dim=LATENT_DIM).to(device)
     optimizer = optim.Adam(vae.parameters(), lr=LR)
 
+    print(f"Config: latent_dim={LATENT_DIM}, epochs={EPOCHS}, lr={LR}, batch_size={BATCH_SIZE}")
 
-    # ----- TRAINING LOOP -----
-    print(f"Training config: latent_dim={LATENT_DIM}, epochs={EPOCHS}, lr={LR}, batch_size={BATCH_SIZE}")
+    train_losses, val_losses = [], []
 
-    losses = []
+    # save best model
+    best_val_loss = float('inf')
+    best_model_path = os.path.join(ARTIFACT_DIR, f"vae_best.pth")
+
     for epoch in range(EPOCHS):
-        total_loss = 0
+        # ---- TRAIN ----
         vae.train()
-        for batch in data_loader:
+        total_loss = 0
+        for batch in train_loader:
             x = batch.to(device)
             x_recon, mu, logvar = vae(x)
             loss = loss_fn(x, x_recon, mu, logvar)
@@ -74,9 +87,28 @@ def main():
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        losses.append(total_loss)
-        if epoch % 50 == 0:
-            print(f"Epoch {epoch+1}, Loss: {total_loss:.4f}")
+        train_loss = total_loss / len(train_loader) # average per batch
+        train_losses.append(train_loss)
+
+        # ---- VALIDATION ----
+        vae.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for batch in val_loader:
+                x = batch.to(device)
+                x_recon, mu, logvar = vae(x)
+                val_loss += loss_fn(x, x_recon, mu, logvar).item()
+        val_loss /= len(val_loader)
+        val_losses.append(val_loss)
+
+        # ---- LOGGING ----
+        if epoch % 10 == 0 or epoch == EPOCHS - 1:
+            print(f"Epoch {epoch+1} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+
+        # Save best model based on validation loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            torch.save(vae.state_dict(), best_model_path)
 
     os.makedirs(PLOT_DIR, exist_ok=True)
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
@@ -84,12 +116,14 @@ def main():
     filename_suffix = f"ld{LATENT_DIM}_ep{EPOCHS}_bs{BATCH_SIZE}_lr{lr_str}"
 
 
-    # Plot training loss
+    # Plot training and validation loss
     loss_plot_path = os.path.join(PLOT_DIR, f"loss_{filename_suffix}.png")
-    plt.plot(losses)
+    plt.figure(figsize=(8,5))
+    plt.plot(train_losses, label="Train Loss", color="blue")
+    plt.plot(val_losses, label="Validation Loss", color="orange")
     plt.xlabel("Epoch")
-    plt.ylabel("Total Loss")
-    plt.title("VAE Training Loss")
+    plt.ylabel("Loss")
+    plt.title("VAE Training and Validation Loss")
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(loss_plot_path)
@@ -118,9 +152,14 @@ def main():
     )
 
     # ------- SAVE LATENTS AND LOSSES -------
-    np.save(os.path.join(ARTIFACT_DIR, f"losses_{filename_suffix}.npy"), losses)
+    np.save(os.path.join(ARTIFACT_DIR, f"train_losses_{filename_suffix}.npy"), train_losses)
+    np.save(os.path.join(ARTIFACT_DIR, f"val_losses_{filename_suffix}.npy"), val_losses)
     np.save(os.path.join(ARTIFACT_DIR, f"latents_{filename_suffix}.npy"), latents)
 
+
+    # ---- SAVE FULL MODEL AND DECODER ----
+    torch.save(vae.state_dict(), os.path.join(ARTIFACT_DIR, f"vae_{filename_suffix}.pth"))
+    torch.save(vae.decoder.state_dict(), os.path.join(ARTIFACT_DIR, f"decoder_{filename_suffix}.pth"))
 
 
 
