@@ -121,6 +121,7 @@ def main():
     plt.figure(figsize=(8,5))
     plt.plot(train_losses, label="Train Loss", color="blue")
     plt.plot(val_losses, label="Validation Loss", color="orange")
+    plt.legend()
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("VAE Training and Validation Loss")
