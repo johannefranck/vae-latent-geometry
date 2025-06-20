@@ -117,13 +117,13 @@ def plot_latents_with_splines(latents, labels, grid, splines, filename):
 
 # ---- Main ----
 
-with open("src/artifacts/dijkstra_paths.pkl", "rb") as f:
+with open("src/artifacts/dijkstra_paths_avae.pkl", "rb") as f:
     dijkstra_paths = pickle.load(f)
 
 
 def main():
     grid = np.load("src/artifacts/grid.npy")
-    latents = np.load("src/artifacts/latents_ld2_ep600_bs64_lr1e-03.npy")
+    latents = np.load("src/artifacts/latents_Avae_ld2_ep800_bs64_lr1e-03.npy")
     labels = np.load("data/tasic-ttypes.npy")
 
     splines = []
@@ -133,12 +133,12 @@ def main():
         splines.append(spline)
         print(f"Initialized spline {i+1}/{len(dijkstra_paths)}")
 
-    plot_latents_with_splines(latents, labels, grid, splines, "src/plots/latents_grid_splinepaths_pytorch.png")
+    plot_latents_with_splines(latents, labels, grid, splines, "src/plots/latents_grid_splinepaths_pytorch_avae.png")
 
-    with open("src/artifacts/spline_inits_torch.pkl", "wb") as f:
+    with open("src/artifacts/spline_inits_torch_avae.pkl", "wb") as f:
         pickle.dump(splines, f)
 
-    print(f"Saved {len(splines)} PyTorch splines to src/artifacts/spline_inits_torch.pkl")
+    print(f"Saved {len(splines)} PyTorch splines to src/artifacts/spline_inits_torch_avae.pkl")
 
 
 if __name__ == "__main__":

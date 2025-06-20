@@ -156,7 +156,8 @@ def main():
     os.makedirs("src/plots", exist_ok=True)
     os.makedirs("src/artifacts", exist_ok=True)
 
-    latents = np.load("src/artifacts/latents_ld2_ep600_bs64_lr1e-03.npy")
+    # latents = np.load("src/artifacts/latents_ld2_ep600_bs64_lr1e-03.npy")
+    latents = np.load("src/artifacts/latents_Avae_ld2_ep800_bs64_lr1e-03.npy")
     labels = np.load("data/tasic-ttypes.npy")
 
     # The grid is synthetic
@@ -203,7 +204,7 @@ def main():
     lengths = [len(p) for p in all_paths]
     print(f"Min path length: {min(lengths)}, Max path length: {max(lengths)}, Avg: {np.mean(lengths):.2f}")
         
-    with open("src/artifacts/dijkstra_paths.pkl", "wb") as f:
+    with open("src/artifacts/dijkstra_paths_avae.pkl", "wb") as f:
         pickle.dump(all_paths, f)
 
 

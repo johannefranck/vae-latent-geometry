@@ -2,7 +2,7 @@ vae:
   latent_dim: 2
   input_dim: 50
 training:
-  epochs: 600
+  epochs: 800
   lr: 0.001
   batch_size: 64
 

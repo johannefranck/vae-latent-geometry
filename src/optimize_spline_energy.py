@@ -7,6 +7,7 @@ import pickle
 import seaborn as sns
 from torch.optim import Adam
 from src.spline_pytorch import TorchCubicSpline
+from src.advanced_vae import AdvancedVAE
 
 def construct_basis(n_poly, dim):
     tc = torch.linspace(0, 1, n_poly + 1)[1:-1]
@@ -59,10 +60,25 @@ class GeodesicSpline(nn.Module):
     def forward(self, t):
         return self._eval_line(t) + self._eval_poly(t)
 
-def fit_initial_omega(ctrl_pts, basis, n_poly):
-    path_tensor = torch.tensor(ctrl_pts, dtype=torch.float32)
-    D_upsampled = F.interpolate(path_tensor.T.unsqueeze(0), size=4*n_poly, mode='linear', align_corners=True).squeeze(0).T
-    return torch.linalg.lstsq(basis, D_upsampled).solution
+# def fit_initial_omega(ctrl_pts, basis, n_poly):
+#     path_tensor = torch.tensor(ctrl_pts, dtype=torch.float32)
+#     D_upsampled = F.interpolate(path_tensor.T.unsqueeze(0), size=4*n_poly, mode='linear', align_corners=True).squeeze(0).T
+#     return torch.linalg.lstsq(basis, D_upsampled).solution
+def fit_initial_omega(ctrl_pts, basis, n_poly, alpha=1e-4):
+    path_tensor = torch.tensor(ctrl_pts, dtype=torch.float32)  # shape: [N, 2]
+    path_tensor = path_tensor.T.unsqueeze(0)  # shape: [1, 2, N]
+
+    # Interpolate to 4*n_poly points (must match basis size)
+    D_upsampled = F.interpolate(path_tensor, size=4*n_poly, mode='linear', align_corners=True)
+    D_upsampled = D_upsampled.squeeze(0).T  # shape: [4*n_poly, 2]
+
+    # Regularized least squares solution
+    A = basis
+    AtA = A.T @ A + alpha * torch.eye(A.shape[1])
+    Atb = A.T @ D_upsampled
+    omega = torch.linalg.solve(AtA, Atb)
+    return omega
+
 
 
 def compute_energy(spline, decoder, t_vals):
@@ -72,22 +88,30 @@ def compute_energy(spline, decoder, t_vals):
     G_all = []
     for zi in z[:-1]:
         zi = zi.unsqueeze(0).clone().detach().requires_grad_(True)
-        x = decoder(zi)
+        x = decoder(zi).mean
         J = torch.stack([torch.autograd.grad(x[0, j], zi, retain_graph=True, create_graph=True)[0].squeeze(0)
                          for j in range(x.shape[-1])], dim=0)
         G = J.T @ J
         G_all.append(G.unsqueeze(0))
+    print(f"Jacobian norm: {J.norm().item():.2e}")
     G_all = torch.cat(G_all, dim=0)
     return torch.bmm(torch.bmm(dz, G_all), dz.transpose(1, 2)).mean()
 
-def optimize_splines(ctrl_pts_list, decoder, t_vals, n_poly, steps=30, lr=1e-2):
+def optimize_splines(ctrl_pts_list, decoder, t_vals, basis, n_poly, steps=30, lr=1e-2, init_mode = "fit"):
     optimized = []
-    basis = construct_basis(n_poly, dim=2)
     for i, ctrl_pts in enumerate(ctrl_pts_list):
         z0 = torch.tensor(ctrl_pts[0], dtype=torch.float32)
         z1 = torch.tensor(ctrl_pts[-1], dtype=torch.float32)
         point_pair = torch.stack([z0, z1])
-        omega_init = fit_initial_omega(ctrl_pts, basis, n_poly)
+
+        # possible init modes: 
+        if init_mode == "fit":
+                    omega_init = fit_initial_omega(ctrl_pts, basis, n_poly)
+        elif init_mode == "zeros": # do "zeros" like syrota.
+            omega_init = torch.zeros((basis.shape[1],2), dtype=torch.float32)
+        else:
+            raise ValueError(f"Unknown initialization mode: {init_mode}")
+        
         spline = GeodesicSpline(point_pair, basis, omega_init)
         optimizer = Adam([spline.omega], lr=lr)
         print(f"\n--- Optimizing spline {i+1}/{len(ctrl_pts_list)} ---")
@@ -97,6 +121,8 @@ def optimize_splines(ctrl_pts_list, decoder, t_vals, n_poly, steps=30, lr=1e-2):
             energy.backward()
             optimizer.step()
             print(f"Step {step+1:3d} | Energy: {energy.item():.6f}")
+            print(f"gradient norm: {spline.omega.grad.norm().item() if spline.omega.grad is not None else 'N/A'}")
+    
         optimized.append(spline)
         plot_spline_derivatives(spline, t_vals, name=f"spline_{i+1}")
     return optimized
@@ -171,57 +197,50 @@ def plot_spline_derivatives(spline, t_vals, name="spline"):
     plt.savefig(f"src/plots/{name}_derivatives.png")
     plt.close()
 
-class CrazyDecoder(nn.Module):
-    def __init__(self, input_dim=2, output_dim=50):
-        super().__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.Tanh(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.Linear(64, output_dim)
-        )
 
-    def forward(self, z):
-        return self.mlp(z)
-
-
-def generate_smooth_test_paths(n_poly, n_paths=2):
-    t = np.linspace(0, 1, n_poly + 1)
-    paths = []
-    theta = 2 * np.pi * t
-    x1 = np.cos(theta)
-    y1 = np.sin(theta)
-    paths.append(np.stack([x1, y1], axis=1))
-    x2 = t * 4 - 2
-    y2 = 1 / (1 + np.exp(-5 * x2)) - 0.5
-    paths.append(np.stack([x2, y2], axis=1))
-    return paths[:n_paths]
 
 def main():
     import sys
     import src.spline_pytorch
     sys.modules['__main__'].TorchCubicSpline = src.spline_pytorch.TorchCubicSpline
 
-    n_poly = 20
+    n_poly = 3 # try fewer => fewer parameters!
     t_vals = torch.linspace(0, 1, 2000)
 
-    decoder = CrazyDecoder(output_dim=50).eval()
-    ctrl_pts_list = generate_smooth_test_paths(n_poly)
-    plot_input_paths(ctrl_pts_list, t_vals, "src/plots/input_paths.png")
+    # decoder = CrazyDecoder(output_dim=50).eval()
+    vae = AdvancedVAE(input_dim=50, latent_dim=2)
+    vae.load_state_dict(torch.load("src/artifacts/vae_best_avae.pth", map_location="cpu"))
+    vae.eval()
+    decoder = vae.decoder
 
-    optimized_splines = optimize_splines(ctrl_pts_list, decoder, t_vals, n_poly=n_poly, steps=10, lr=1e-2)
+    # ctrl_pts_list = generate_smooth_test_paths(n_poly)
+    with open("src/artifacts/spline_inits_torch_avae.pkl", "rb") as f:
+        spline_inits = pickle.load(f)
 
-    with open("src/artifacts/spline_optimized_torch.pkl", "wb") as f:
+    ctrl_pts_list = [spline(t_vals).detach().cpu().numpy() for spline in spline_inits[:1]]
+
+    #print(len(ctrl_pts_list), ctrl_pts_list[0].shape) 2000 er mange at lave en spline fra
+
+    plot_input_paths(ctrl_pts_list, t_vals, "src/plots/input_paths_avae.png")
+
+    # ---- now optimize the splines ----
+    basis = construct_basis(n_poly, dim=2)
+    print(f"Using basis: {basis.shape} for n_poly={n_poly}")
+
+    optimized_splines = optimize_splines(ctrl_pts_list, decoder, t_vals, basis=basis, n_poly=n_poly, steps=10, lr=1e-2, init_mode="fit")
+
+    with open("src/artifacts/spline_optimized_torch_avae.pkl", "wb") as f:
         pickle.dump(optimized_splines, f)
 
-    latents = np.load("src/artifacts/latents_ld2_ep600_bs64_lr1e-03.npy")
+    # ---- plotting ----
+
+    latents = np.load("src/artifacts/latents_Avae_ld2_ep800_bs64_lr1e-03.npy")
     labels = np.load("data/tasic-ttypes.npy")
     grid = np.load("src/artifacts/grid.npy")
 
-    plot_optimized_paths(latents, labels, grid, optimized_splines, t_vals, "src/plots/latents_optimized_splines.png")
-    basis = construct_basis(n_poly, dim=2)
-    plot_comparison(ctrl_pts_list, optimized_splines, basis, n_poly, t_vals, "src/plots/all_splines_comparison.png")
+    plot_optimized_paths(latents, labels, grid, optimized_splines, t_vals, "src/plots/latents_optimized_splines_avae.png")
+    
+    plot_comparison(ctrl_pts_list, optimized_splines, basis, n_poly, t_vals, "src/plots/all_splines_comparison_avae.png")
 
 if __name__ == "__main__":
     main()

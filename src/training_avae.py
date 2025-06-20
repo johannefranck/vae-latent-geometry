@@ -60,6 +60,7 @@ def main():
     # ----- INIT MODEL -----
     vae = AdvancedVAE(input_dim=INPUT_DIM, latent_dim=LATENT_DIM).to(device)
     optimizer = optim.Adam(vae.parameters(), lr=LR)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.5)
 
     print(f"Config: latent_dim={LATENT_DIM}, epochs={EPOCHS}, lr={LR}, batch_size={BATCH_SIZE}")
 
@@ -67,7 +68,7 @@ def main():
 
     # save best model
     best_val_loss = float('inf')
-    best_model_path = os.path.join(ARTIFACT_DIR, f"vae_best.pth")
+    best_model_path = os.path.join(ARTIFACT_DIR, f"vae_best_avae.pth")
 
     for epoch in range(EPOCHS):
         # ---- TRAIN ----
@@ -100,6 +101,8 @@ def main():
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(vae.state_dict(), best_model_path)
+
+        scheduler.step()
 
     os.makedirs(PLOT_DIR, exist_ok=True)
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
