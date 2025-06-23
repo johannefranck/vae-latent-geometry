@@ -4,17 +4,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from pathlib import Path
 import pickle
+import random
+import os
 import numpy as np
+from glob import glob
+from pathlib import Path
 
-from src.advanced_vae import AdvancedVAE
+from src.vae import VAE
 from src.catmull_init_spline import CatmullRom
 
 
 
-import random
-import os
+
 
 SEED = 12
 random.seed(SEED)
@@ -29,14 +31,14 @@ os.environ["PYTHONHASHSEED"] = str(SEED)
 
 
 
-# 1. Load trained decoder
+# Load trained decoder
 def load_trained_decoder(path, input_dim=50, latent_dim=2, device="cpu"):
-    model = AdvancedVAE(input_dim=input_dim, latent_dim=latent_dim).to(device)
+    model = VAE(input_dim=input_dim, latent_dim=latent_dim).to(device)
     model.load_state_dict(torch.load(path, map_location=device))
     model.eval()
     return model.decoder
 
-# 2. Load spline from previous init
+# Load spline from previous init
 def load_spline(path, device="cpu"):
     obj = torch.load(path, map_location=device)
     knots = obj["knots"].to(device)
@@ -44,27 +46,23 @@ def load_spline(path, device="cpu"):
     spline.tau.data = obj["tau"].to(device)
     return spline
 
-
+# help for jacobian
 def compute_jacobian(decoder, z):
     z = z.detach().clone().requires_grad_(True)
-    x = decoder(z).mean.view(-1)  # shape: (output_dim,)
+    x = decoder(z).mean.view(-1)  # (output_dim,)
     J_rows = []
     for i in range(x.shape[0]):
         grad_i = torch.autograd.grad(x[i], z, retain_graph=True, create_graph=True)[0]  # shape: (1, 2)
         J_rows.append(grad_i)
-    J = torch.cat(J_rows, dim=0)  # shape: (output_dim, 2)
+    J = torch.cat(J_rows, dim=0)  # (output_dim, 2)
     return J
 
-
-
-
-
-# 3. Energy = Sum of squared pixel distances between decoded outputs along the spline
+# Energy = Sum of squared pixel distances between decoded outputs along the spline
 def compute_energy(spline, decoder, t_vals=None):
     if t_vals is None:
         t_vals = torch.linspace(0, 1, 64, device=spline.p.device)
     z = spline(t_vals)                              # (N, 2)
-    dz = (z[1:] - z[:-1]) * t_vals.shape[0]         # ∂z/∂t scaled
+    dz = (z[1:] - z[:-1]) * t_vals.shape[0]         # dz/dt scaled
     dz = dz.unsqueeze(1)                            # (N-1, 1, 2)
 
     G_all = []
@@ -81,85 +79,7 @@ def compute_energy(spline, decoder, t_vals=None):
     return energy.mean()
 
 
-# def compute_energy_batched(spline, decoder, t_vals=None):
-#     if t_vals is None:
-#         t_vals = torch.linspace(0, 1, 64, device=spline.p.device)
-
-#     z = spline(t_vals)                                # (N, 2)
-#     dz = (z[1:] - z[:-1]) * t_vals.shape[0]           # (N-1, 2)
-#     dz = dz.unsqueeze(1)                              # (N-1, 1, 2)
-#     z_in = z[:-1].detach().clone().requires_grad_(True)  # (N-1, 2)
-
-#     # Compute Jacobians per sample (looped, avoids cross-sample gradients)
-#     J_list = []
-#     for i in range(z_in.shape[0]):
-#         zi = z_in[i].unsqueeze(0)                     # (1, 2)
-#         zi.requires_grad_(True)
-#         xi = decoder(zi).mean.view(-1)                # (D,)
-#         grads = []
-#         for j in range(xi.shape[0]):
-#             grad_j = torch.autograd.grad(xi[j], zi, retain_graph=True, create_graph=True)[0]  # (1, 2)
-#             grads.append(grad_j)
-#         Ji = torch.cat(grads, dim=0).unsqueeze(0)     # (1, D, 2)
-#         J_list.append(Ji)
-
-#     J = torch.cat(J_list, dim=0)                      # (N-1, D, 2)
-#     J = J.transpose(1, 2)                             # (N-1, 2, D)
-#     G_all = torch.bmm(J, J.transpose(1, 2))           # (N-1, 2, 2)
-
-#     energy = torch.bmm(torch.bmm(dz, G_all), dz.transpose(1, 2))  # (N-1, 1, 1)
-#     return energy.mean()
-
-
-
-
-
-
-
-
-# 4. Main optimization loop
-# def optimize_tau(spline, decoder, steps=1000, lr=1e-2):
-#     optimizer = optim.Adam([spline.tau], lr=lr)
-#     for step in range(steps):
-#         optimizer.zero_grad()
-#         E = compute_energy(spline, decoder, t_vals)
-#         E.backward()
-#         optimizer.step()
-#         if step % 50 == 0:
-#             print(f"tau grad norm: {spline.tau.grad.norm().item():.4f}")
-#             print(f"Step {step}: Energy = {E.item():.4f}")
-#     return spline
-# def optimize_tau(spline, decoder, steps=1000, lr=1e-2):
-#     optimizer = optim.Adam([spline.tau], lr=lr)
-#     prev_energy = compute_energy(spline, decoder, t_vals).item()
-#     print(f"Initial Energy: {prev_energy:.4f}")
-
-#     for step in range(steps):
-#         tau_backup = spline.tau.data.clone()  # backup current τ
-
-#         optimizer.zero_grad()
-#         E = compute_energy(spline, decoder, t_vals)
-#         E.backward()
-#         optimizer.step()
-
-#         new_energy = compute_energy(spline, decoder, t_vals).item()
-
-#         if new_energy > prev_energy:
-#             spline.tau.data = tau_backup  # revert τ
-#             for group in optimizer.param_groups:
-#                 for p in group['params']:
-#                     if p.grad is not None:
-#                         p.grad.zero_()
-#             if step % 50 == 0:
-#                 print(f"Step {step}: Rejected ↑ Energy = {new_energy:.2f} > {prev_energy:.2f}")
-#         else:
-#             prev_energy = new_energy
-#             if step % 50 == 0:
-#                 print(f"Step {step}: Accepted ↓ Energy = {new_energy:.2f} | τ grad norm: {spline.tau.grad.norm().item():.4f}")
-
-#     return spline
-
-
+# 4. Optimize tau using gradient descent
 def optimize_tau(spline, decoder, steps=1000, lr=1e-2):
     optimizer = optim.Adam([spline.tau], lr=lr)
 
@@ -206,24 +126,8 @@ def plot_spline(spline, out_path="src/plots/spline_tau_optimized.png"):
         plt.savefig(out_path, dpi=300)
         print("Saved:", out_path)
 
-# 6. Entrypoint
-# if __name__ == "__main__":
-#     device = "cuda" if torch.cuda.is_available() else "cpu"
-#     t_vals = torch.linspace(0, 1, 64, device=device)
-#     decoder_path = "src/artifacts/vae_best_avae.pth"
-#     spline_path  = "src/artifacts/spline_init_syrota.pt"
-
-#     decoder = load_trained_decoder(decoder_path, input_dim=50, latent_dim=2, device=device)
-#     spline = load_spline(spline_path, device)
-
-#     spline = optimize_tau(spline, decoder, steps=100, lr=1e-2)
-#     torch.save({'knots': spline.p, 'tau': spline.tau.detach()}, "src/artifacts/spline_optimized_tau.pt")
-#     print("Saved optimized τ to src/artifacts/spline_optimized_tau.pt")
-
-#     plot_spline(spline)
 
 if __name__ == "__main__":
-    from glob import glob
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     t_vals = torch.linspace(0, 1, 64, device=device)
@@ -244,10 +148,10 @@ if __name__ == "__main__":
         with torch.no_grad():
             t = torch.linspace(0, 1, 400, device=device)
             init_curve = spline(t).cpu().numpy()
-            plt.plot(init_curve[:, 0], init_curve[:, 1], 'gray', alpha=0.4, linestyle="--")
+            plt.plot(init_curve[:, 0], init_curve[:, 1], 'gray', alpha=0.4, linestyle="--", label="Initial Spline")
 
         # Optimize spline
-        spline = optimize_tau(spline, decoder, steps=50, lr=1e-2)
+        spline = optimize_tau(spline, decoder, steps=10, lr=1e-2)
 
         # Save optimized tau
         outname = Path(path).name.replace("spline_init", "spline_optimized")
@@ -256,7 +160,7 @@ if __name__ == "__main__":
         # Save optimized curve for plotting
         with torch.no_grad():
             optimized_curve = spline(t).cpu().numpy()
-            plt.plot(optimized_curve[:, 0], optimized_curve[:, 1], 'r', lw=1)
+            plt.plot(optimized_curve[:, 0], optimized_curve[:, 1], 'r', lw=1, label="Optimized Spline")
 
     plt.axis("equal")
     plt.title("All Initial and Optimized Splines")
