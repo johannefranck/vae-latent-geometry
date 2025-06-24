@@ -6,6 +6,21 @@ import numpy as np
 from pathlib import Path
 from src.vae import VAE
 
+import random
+import os
+
+def set_seed(seed=12):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.use_deterministic_algorithms(True)
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # Needed for deterministic CUDA ops
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+set_seed(12)  
+
 
 class GeodesicSpline(nn.Module):
     def __init__(self, point_pair, basis, n_poly):
@@ -13,20 +28,10 @@ class GeodesicSpline(nn.Module):
         self.a, self.b = point_pair
         self.n_poly = n_poly
         self.basis = basis
-        self.omega = nn.Parameter(torch.randn(basis.shape[1], self.a.shape[0]))
+        gen = torch.Generator(device=self.a.device).manual_seed(22)
+        self.omega = nn.Parameter(torch.randn(basis.shape[1], self.a.shape[0], generator=gen, device=self.a.device))
 
-    # def eval_piecewise_poly(self, t, coeffs):
-    #     if t.ndim == 2 and t.shape[1] == 1:
-    #         t = t.squeeze(1)  # (T,)
-    #     T = t.shape[0]
-    #     n_poly = coeffs.shape[0]
 
-    #     seg_idx = torch.clamp((t * n_poly).floor().long(), max=n_poly - 1)  # (T,)
-    #     local_t = t * n_poly - seg_idx.float()  # (T,)
-    #     powers = torch.stack([local_t**i for i in range(4)], dim=1)  # (T, 4)
-
-    #     segment_coefs = coeffs[seg_idx]  # (T, 4, d)
-    #     return torch.einsum("ti,tid->td", powers, segment_coefs)
     def eval_piecewise_poly(self, t, coeffs):
         t = t.flatten()
         seg_idx = torch.clamp((t * self.n_poly).floor().long(), max=self.n_poly - 1)
@@ -34,7 +39,6 @@ class GeodesicSpline(nn.Module):
         powers = torch.stack([local_t**i for i in range(4)], dim=1)  # (T, 4)
         seg_coefs = coeffs[seg_idx]  # (T, 4, dim)
         return torch.einsum("ti,tid->td", powers, seg_coefs)
-
 
     def forward(self, t):
         coeffs = self.basis @ self.omega  # (4n, dim)
@@ -46,7 +50,7 @@ class GeodesicSpline(nn.Module):
 
 
 def nullspace(C, rtol=1e-10):
-    C = C.to(torch.float64)  # important!
+    C = C.to(torch.float64)  
     U, S, Vh = torch.linalg.svd(C, full_matrices=True)
     rank = (S > rtol * S[0]).sum()
     return Vh.T[:, rank:].contiguous()
@@ -65,25 +69,25 @@ def construct_nullspace_basis(n_poly, device):
     # C0, C1, C2 continuity at internal knots
     for i in range(n_poly - 1):
         si = 4 * i  # start index
-        t = tc[i] # global t at knot i
-        t=1
+        # Local coordinate continuity: tL=1.0 (end of left), tR=0.0 (start of right)
+        tL, tR = 1.0, 0.0
 
-        # C0 continuity
-        c0 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-        c0[si:si+4]     = torch.tensor([1.0, t, t**2, t**3], dtype=torch.float64, device=device)   # left at t=1
-        c0[si+4:si+8]   = -torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float64, device=device)       # right at t=0
+        # C0: continuity of position
+        c0 = torch.zeros(4 * n_poly, dtype=torch.float64, device=device)
+        c0[si:si+4] = torch.tensor([1, tL, tL**2, tL**3], device=device)
+        c0[si+4:si+8] = -torch.tensor([1, tR, tR**2, tR**3], device=device)
         rows.append(c0)
 
-        # C1 continuity
-        c1 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-        c1[si:si+4]     = torch.tensor([0.0, 1.0, 2.0*t, 3.0*t**2], dtype=torch.float64, device=device)        # d/dt left at t=1
-        c1[si+4:si+8]   = -torch.tensor([0.0, 1.0, 0.0, 0.0], dtype=torch.float64, device=device)       # d/dt right at t=0
+        # C1: continuity of first derivative
+        c1 = torch.zeros(4 * n_poly, dtype=torch.float64, device=device)
+        c1[si:si+4] = torch.tensor([0, 1, 2*tL, 3*tL**2], device=device)
+        c1[si+4:si+8] = -torch.tensor([0, 1, 2*tR, 3*tR**2], device=device)
         rows.append(c1)
 
-        # C2 continuity
-        c2 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-        c2[si:si+4]     = torch.tensor([0.0, 0.0, 2.0, 6.0*t], dtype=torch.float64, device=device)        # d²/dt² left at t=1
-        c2[si+4:si+8]   = -torch.tensor([0.0, 0.0, 2.0, 0.0], dtype=torch.float64, device=device)       # d²/dt² right at t=0
+        # C2: continuity of second derivative
+        c2 = torch.zeros(4 * n_poly, dtype=torch.float64, device=device)
+        c2[si:si+4] = torch.tensor([0, 0, 2, 6*tL], device=device)
+        c2[si+4:si+8] = -torch.tensor([0, 0, 2, 6*tR], device=device)
         rows.append(c2)
 
     C = torch.stack(rows)
@@ -96,61 +100,6 @@ def construct_nullspace_basis(n_poly, device):
     print(f"rank of C: {torch.linalg.matrix_rank(C)}")
     print(f"expected rank: {C.shape[0]}")
     return basis.to(dtype=torch.float32), C.to(dtype=torch.float32)
-
-
-# def construct_nullspace_basis(n_poly, device):
-#     t_knots = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1]  # (n-1,) internal knots
-
-#     rows = []
-
-#     # Boundary conditions: gamma(0) = 0, gamma(1) = 0
-#     B = torch.zeros((2, 4 * n_poly), device=device, dtype=torch.float64)
-#     B[0, 0] = 1.0
-#     B[1, -4:] = 1.0
-#     rows.append(B[0])
-#     rows.append(B[1])
-
-#     # Continuity constraints: C0, C1, C2 at internal knots
-#     for i, t in enumerate(t_knots):
-#         si = 4 * i
-
-#         c0 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-#         c0[si:si+4] = torch.tensor([1.0, t, t**2, t**3], device=device, dtype=torch.float64)
-#         c0[si+4:si+8] = -c0[si:si+4]
-#         #print(f"c0 shape: {c0.shape}")
-#         rows.append(c0)
-
-#         c1 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-#         c1[si:si+4] = torch.tensor([0.0, 1.0, 2*t, 3*t**2], device=device, dtype=torch.float64)
-#         c1[si+4:si+8] = -c1[si:si+4]
-#         rows.append(c1)
-
-#         c2 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-#         c2[si:si+4] = torch.tensor([0.0, 0.0, 2.0, 6*t], device=device, dtype=torch.float64)
-#         c2[si+4:si+8] = -c2[si:si+4]
-#         rows.append(c2)
-
-#     C = torch.stack(rows)  # shape: (3(n-1) + 2, 4n) = (11, 16) for n=4
-
-#     #_, S, Vh = torch.linalg.svd(C)
-#     #basis = Vh.T[:, C.shape[0]:].contiguous()
-#     basis = nullspace(C)  # will now be high precision
-#     basis = torch.linalg.qr(basis)[0]  # makes it orthonormal
-#     residual = torch.norm(C @ basis)
-#     print(f"New residual: {residual:.2e}")
-#     print(f"rank of C: {torch.linalg.matrix_rank(C)}")
-#     print(f"expected rank: {C.shape[0]}")
-
-#     #print(f"norm: {torch.norm(C @ basis).item()}")
-#     #print("Constructed constraint matrix C with shape:", C.shape)
-#     #print("SVD singular values:", S)
-#     # Check nullspace property
-#     #print("Nullspace check (C @ basis):", torch.norm(C @ basis).item())
-#     #print("Basis shape:", basis.shape)
-#     basis = basis.to(dtype=torch.float32)
-#     C = C.to(dtype=torch.float32)
-#     return basis, C  # shape: (4n, d_free)
-
 
 
 
@@ -239,11 +188,11 @@ if __name__ == "__main__":
     # Derivatives
     dz = torch.zeros_like(z)
     for i in range(z.shape[1]):
-        dz[:, i] = torch.autograd.grad(z[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0]
+        dz[:, i] = torch.autograd.grad(z[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0] * n_poly
 
     ddz = torch.zeros_like(z)
     for i in range(dz.shape[1]):
-        ddz[:, i] = torch.autograd.grad(dz[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0]
+        ddz[:, i] = torch.autograd.grad(dz[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0] * n_poly
 
     print("Spline shape:", z.shape)
     print("Velocity shape:", dz.shape)

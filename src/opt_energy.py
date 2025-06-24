@@ -113,7 +113,7 @@ def main():
 
     print(f"Number of free parameters: {geodesic_model.params.shape[0]}")
 
-    # --- 🔧 Optimize the geodesic_model.params ---
+    # --- Optimize the geodesic_model.params ---
     geodesic_model.train()
     t_vals = torch.linspace(0, 1, 2000, device=device)
 
@@ -125,7 +125,7 @@ def main():
 
     print("\nOptimizing geodesic parameters...")
 
-    for step in range(1000):
+    for step in range(5000):
         optimizer.zero_grad()
         loss = geodesic_model.calculate_energy(t_vals)
         loss.backward()
