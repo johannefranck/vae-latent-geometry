@@ -7,7 +7,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader, random_split
-from src.advanced_vae import AdvancedVAE
+from src.vae import VAE
 from src.plotting import plot_latent_space  
 
 
@@ -58,7 +58,7 @@ def main():
     print(f"Data shape: {data.shape}, Labels shape: {labels.shape}, Colors: {colors.shape}")
 
     # ----- INIT MODEL -----
-    vae = AdvancedVAE(input_dim=INPUT_DIM, latent_dim=LATENT_DIM).to(device)
+    vae = VAE(input_dim=INPUT_DIM, latent_dim=LATENT_DIM).to(device)
     optimizer = optim.Adam(vae.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.5)
 
@@ -76,7 +76,10 @@ def main():
         total_loss = 0
         for batch in train_loader:
             x = batch.to(device)
-            loss = vae(x)  # negative ELBO
+            # loss = vae(x)  # negative ELBO
+            beta = min(1.0, epoch / 30)  # ramp up from 0 → 1 over first 30 epochs
+            loss = -vae.elbo(x, beta=beta)  # negative ELBO
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -107,7 +110,7 @@ def main():
     os.makedirs(PLOT_DIR, exist_ok=True)
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     lr_str = f"{LR:.0e}"
-    filename_suffix = f"Avae_ld{LATENT_DIM}_ep{EPOCHS}_bs{BATCH_SIZE}_lr{lr_str}"
+    filename_suffix = f"VAE_ld{LATENT_DIM}_ep{EPOCHS}_bs{BATCH_SIZE}_lr{lr_str}"
 
     # Plot training and validation loss
     loss_plot_path = os.path.join(PLOT_DIR, f"loss_{filename_suffix}.png")
@@ -117,7 +120,7 @@ def main():
     plt.legend()
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.title("Advanced VAE Training and Validation Loss")
+    plt.title("VAE Training and Validation Loss")
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(loss_plot_path)
@@ -125,6 +128,9 @@ def main():
 
     # ----- EXTRACT LATENTS -----
     vae.eval()
+    z = torch.randn(1000, LATENT_DIM).to(device)
+    print("Decoder std ≈", vae.decoder(z).base_dist.scale.mean().item())
+
     latents = []
     with torch.no_grad():
         for batch in DataLoader(data_tensor, batch_size=256):

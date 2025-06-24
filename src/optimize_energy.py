@@ -4,7 +4,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from src.vae import VAE
+from src.vae_new import VAE
 
 
 
@@ -15,19 +15,39 @@ class GeodesicSpline(nn.Module):
         self.a, self.b = point_pair
         self.n_poly = n_poly
         self.basis = basis
-        self.omega = nn.Parameter(10 * torch.randn(basis.shape[1], self.a.shape[0]))
+        self.omega = nn.Parameter(torch.randn(basis.shape[1], self.a.shape[0]) * 5)
+
+    # def eval_piecewise_poly(self, t, coeffs):
+    #     """
+    #     Evaluate piecewise cubic spline.
+
+    #     t: (T,) time values in [0,1]
+    #     coeffs: (n_poly, 4, d) spline coefficients
+    #     returns: (T, d)
+    #     """
+    #     T = t.shape[0]
+    #     n_poly = coeffs.shape[0]
+    #     d = coeffs.shape[2]
+
+    #     seg_idx = torch.clamp((t * n_poly).floor().long(), max=n_poly - 1)  # (T,)
+    #     local_t = t * n_poly - seg_idx.float()  # (T,)
+    #     #print(local_t.shape, local_t.dtype)
+    #     local_t = local_t.squeeze(-1) if local_t.ndim > 1 else local_t  # ensure (T,)
+        
+    #     powers = torch.stack([local_t**i for i in range(4)], dim=1)  # (T, 4)
+    #     # # make powers (T,4,1)
+    #     # powers = powers.unsqueeze(-1)  # (T, 4, 1)
+    #     #print("Powers shape:", powers.shape)
+    #     segment_coefs = coeffs[seg_idx]  # (T, 1, 4, d)
+    #     segment_coefs = segment_coefs.squeeze(1)  # (T, 4, d)
+    #     #print("Segment coefs shape:", segment_coefs.shape)
+    #     return torch.einsum("ti,tid->td", powers, segment_coefs)
 
     def eval_piecewise_poly(self, t, coeffs):
-        """
-        Evaluate piecewise cubic spline.
-
-        t: (T,) time values in [0,1]
-        coeffs: (n_poly, 4, d) spline coefficients
-        returns: (T, d)
-        """
+        if t.ndim == 2 and t.shape[1] == 1:
+            t = t.squeeze(1)  # (T,)
         T = t.shape[0]
         n_poly = coeffs.shape[0]
-        d = coeffs.shape[2]
 
         seg_idx = torch.clamp((t * n_poly).floor().long(), max=n_poly - 1)  # (T,)
         local_t = t * n_poly - seg_idx.float()  # (T,)
@@ -50,13 +70,21 @@ class GeodesicSpline(nn.Module):
 
 
 
+def nullspace(C, rtol=1e-10):
+    C = C.to(torch.float64)  # important!
+    U, S, Vh = torch.linalg.svd(C, full_matrices=True)
+    rank = (S > rtol * S[0]).sum()
+    return Vh.T[:, rank:].contiguous()
+
+
+
 def construct_nullspace_basis(n_poly, device):
-    t_knots = torch.linspace(0, 1, n_poly + 1, device=device)[1:-1]  # (n-1,) internal knots
+    t_knots = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1]  # (n-1,) internal knots
 
     rows = []
 
     # Boundary conditions: gamma(0) = 0, gamma(1) = 0
-    B = torch.zeros((2, 4 * n_poly), device=device)
+    B = torch.zeros((2, 4 * n_poly), device=device, dtype=torch.float64)
     B[0, 0] = 1.0
     B[1, -4:] = 1.0
     rows.append(B[0])
@@ -66,63 +94,46 @@ def construct_nullspace_basis(n_poly, device):
     for i, t in enumerate(t_knots):
         si = 4 * i
 
-        c0 = torch.zeros(4 * n_poly, device=device)
-        c0[si:si+4] = torch.tensor([1.0, t, t**2, t**3], device=device)
+        c0 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
+        c0[si:si+4] = torch.tensor([1.0, t, t**2, t**3], device=device, dtype=torch.float64)
         c0[si+4:si+8] = -c0[si:si+4]
         #print(f"c0 shape: {c0.shape}")
         rows.append(c0)
 
-        c1 = torch.zeros(4 * n_poly, device=device)
-        c1[si:si+4] = torch.tensor([0.0, 1.0, 2*t, 3*t**2], device=device)
+        c1 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
+        c1[si:si+4] = torch.tensor([0.0, 1.0, 2*t, 3*t**2], device=device, dtype=torch.float64)
         c1[si+4:si+8] = -c1[si:si+4]
         rows.append(c1)
 
-        c2 = torch.zeros(4 * n_poly, device=device)
-        c2[si:si+4] = torch.tensor([0.0, 0.0, 2.0, 6*t], device=device)
+        c2 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
+        c2[si:si+4] = torch.tensor([0.0, 0.0, 2.0, 6*t], device=device, dtype=torch.float64)
         c2[si+4:si+8] = -c2[si:si+4]
         rows.append(c2)
 
     C = torch.stack(rows)  # shape: (3(n-1) + 2, 4n) = (11, 16) for n=4
 
-    _, S, Vh = torch.linalg.svd(C)
-    basis = Vh.T[:, C.shape[0]:].contiguous()
+    #_, S, Vh = torch.linalg.svd(C)
+    #basis = Vh.T[:, C.shape[0]:].contiguous()
+    basis = nullspace(C)  # will now be high precision
+    basis = torch.linalg.qr(basis)[0]  # makes it orthonormal
+    residual = torch.norm(C @ basis)
+    print(f"New residual: {residual:.2e}")
+    print(f"rank of C: {torch.linalg.matrix_rank(C)}")
+    print(f"expected rank: {C.shape[0]}")
+
+    #print(f"norm: {torch.norm(C @ basis).item()}")
     #print("Constructed constraint matrix C with shape:", C.shape)
     #print("SVD singular values:", S)
     # Check nullspace property
     #print("Nullspace check (C @ basis):", torch.norm(C @ basis).item())
     #print("Basis shape:", basis.shape)
+    basis = basis.to(dtype=torch.float32)
+    C = C.to(dtype=torch.float32)
     return basis, C  # shape: (4n, d_free)
 
 
-# ------------------ Jacobian & Energy ------------------
-
-# def compute_jacobian(decoder, z):
-#     z = z.detach().clone().requires_grad_(True)
-#     x = decoder(z).mean.view(-1)
-#     grads = [torch.autograd.grad(x[i], z, retain_graph=True, create_graph=True)[0] for i in range(x.shape[0])]
-#     return torch.cat(grads, dim=0)  # (output_dim, dim)
 
 
-# def compute_energy(spline, decoder, t_vals):
-#     z = spline(t_vals)
-#     dz = (z[1:] - z[:-1]) * t_vals.shape[0]
-#     dz = dz.unsqueeze(1)  # (T-1, 1, dim)
-
-#     G_all = []
-#     for zi in z[:-1]:
-#         J = compute_jacobian(decoder, zi.unsqueeze(0))  # (output_dim, dim)
-#         identity = torch.eye(J.shape[1], device=J.device)
-#         deviation = torch.norm(J.T @ J - identity)
-#         #print("Deviation from Euclidean metric:", deviation.item())
-#         if J.norm().item() < 1:
-#             print("Jacobian norm:", J.norm().item())
-
-#         G = J.T @ J  # (dim, dim)
-#         G_all.append(G.unsqueeze(0))
-#     G_all = torch.cat(G_all, dim=0)  # (T-1, dim, dim)
-
-#     energy = torch.bmm(torch.bmm(dz, G_all), dz.transpose(1, 2))  # (T-1, 1, 1)
-#     return energy.mean()
 def compute_energy(spline, decoder, t_vals):
     z = spline(t_vals)  # (T, latent_dim)
     x = decoder(z).mean  # (T, data_dim) — you might need to flatten if needed
@@ -136,10 +147,9 @@ def compute_energy(spline, decoder, t_vals):
 
 
 # ------------------ Optimization ------------------
-
 def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta=1e-6):
     optimizer = optim.Adam([spline.omega], lr=lr)
-    t_vals = torch.linspace(0, 1, 1000, device=spline.omega.device)
+    t_vals = torch.linspace(0, 1, 2000, device=spline.omega.device)
 
     best_energy = compute_energy(spline, decoder, t_vals).item()
     best_params = spline.omega.data.clone()
@@ -150,11 +160,8 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
         energy = compute_energy(spline, decoder, t_vals)
         energy.backward()
 
-        #residual = torch.norm(spline.basis.new_tensor(C) @ (spline.basis @ spline.omega))
-        #print(f"[Step {step:4d}] Constraint residual: {residual.item():.4e}")
-        
         if step >= 2500:
-            torch.nn.utils.clip_grad_value_([spline.omega], clip_value=1.0)
+            torch.nn.utils.clip_grad_value_([spline.omega], clip_value=0.1)
 
         optimizer.step()
 
@@ -175,6 +182,7 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
             break
 
     spline.omega.data.copy_(best_params)
+    print(f"omegas: {spline.omega.data.cpu().numpy()}")
     return spline
 
 
@@ -182,7 +190,7 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
 
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    decoder_path = "src/artifacts/vae_best_avae.pth"
+    decoder_path = "src/artifacts/vae_best.pth"
     vae = VAE(input_dim=50, latent_dim=2).to(device)
     vae.load_state_dict(torch.load(decoder_path, map_location=device))
     vae.eval()
@@ -193,43 +201,80 @@ if __name__ == "__main__":
     b = torch.tensor([20, -55], device=device)
     pair = (a, b)
 
-    n_poly = 4
+    n_poly = 8
     basis, C = construct_nullspace_basis(n_poly, device)
+
+    
     spline = GeodesicSpline(pair, basis, n_poly).to(device)
 
-    spline = optimize_spline(spline, decoder, C, steps=5000, lr=1e-3, patience=500)
+    spline = optimize_spline(spline, decoder, C, steps=2000, lr=1e-3, patience=500)
+
+    save_path = "src/artifacts/spline_ab.pt"
+    torch.save({
+        "omega": spline.omega.data.cpu(),
+        "a": a.cpu(),
+        "b": b.cpu(),
+        "basis": basis.cpu(),
+        "n_poly": n_poly
+    }, save_path)
+    print(f"Saved spline to: {save_path}")
 
 
-with torch.no_grad():
-    t = torch.linspace(0, 1, 1000, device=device)
-    z = spline(t).cpu().numpy()
+# with torch.no_grad():
+    # t = torch.linspace(0, 1, 2000, device=device)
+    # z = spline(t).cpu().numpy()
 
     # Compute first and second derivatives
-    dz = np.gradient(z, axis=0) * 1000
-    ddz = np.gradient(dz, axis=0) * 1000
+    # dz = np.gradient(z, axis=0) * 1000
+    # ddz = np.gradient(dz, axis=0) * 1000
+    t = torch.linspace(0, 1, 2000, device=device, requires_grad=True)
+    z = spline(t)
 
+    # Derivatives
+    # dz = torch.autograd.grad(z, t, grad_outputs=torch.ones_like(z), create_graph=True)[0]
+    # ddz = torch.autograd.grad(dz, t, grad_outputs=torch.ones_like(dz), create_graph=True)[0]
+    # Derivatives
+    dz = torch.zeros_like(z)
+    for i in range(z.shape[1]):
+        dz[:, i] = torch.autograd.grad(z[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0]
+
+    ddz = torch.zeros_like(z)
+    for i in range(dz.shape[1]):
+        ddz[:, i] = torch.autograd.grad(dz[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0]
+
+    print("Spline shape:", z.shape)
+    print("Velocity shape:", dz.shape)
+    print("Acceleration shape:", ddz.shape)
+
+    # Detach for plotting
+    z_np = z.detach().cpu().numpy()
+    dz_np = dz.detach().cpu().numpy()
+    ddz_np = ddz.detach().cpu().numpy()
+
+    # Plot
     fig, axs = plt.subplots(3, 1, figsize=(6, 12))
 
-    # Plot spline path
-    axs[0].plot(z[:, 0], z[:, 1], 'r-', lw=2, label='Geodesic Spline')
-    axs[0].scatter([a[0].cpu(), b[0].cpu()], [a[1].cpu(), b[1].cpu()], c='black', label='Endpoints')
+    axs[0].plot(z_np[:, 0], z_np[:, 1], 'r-', lw=2, label='Geodesic Spline')
+    axs[0].scatter([a[0].item(), b[0].item()], [a[1].item(), b[1].item()], c='black', label='Endpoints')
     axs[0].set_title("Spline in Latent Space")
     axs[0].axis("equal")
     axs[0].legend()
 
-    # Velocity
-    axs[1].plot(dz[:, 0], label="dx/dt")
-    axs[1].plot(dz[:, 1], label="dy/dt")
+    axs[1].plot(dz_np[:, 0], label="dx/dt")
+    axs[1].plot(dz_np[:, 1], label="dy/dt")
     axs[1].set_title("Velocity (First Derivative)")
     axs[1].legend()
 
-    # Acceleration
-    axs[2].plot(ddz[:, 0], label="d²x/dt²")
-    axs[2].plot(ddz[:, 1], label="d²y/dt²")
+    axs[2].plot(ddz_np[:, 0], label="d²x/dt²")
+    axs[2].plot(ddz_np[:, 1], label="d²y/dt²")
     axs[2].set_title("Acceleration (Second Derivative)")
     axs[2].legend()
+    print("Spline start:", z_np[0])
+    print("Spline end:  ", z_np[-1])
+    print("Expected a:  ", a.cpu().numpy())
+    print("Expected b:  ", b.cpu().numpy())
+
 
     plt.tight_layout()
-    Path("src/plots").mkdir(parents=True, exist_ok=True)
-    plt.savefig("src/plots/spline_diagnostics.png", dpi=300)
-    print("Saved: src/plots/spline_diagnostics.png")
+    plt.savefig("src/plots/spline_loaded.png", dpi=300)
+    print("Saved plot to src/plots/spline_loaded.png")
