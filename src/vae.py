@@ -27,9 +27,9 @@ class GaussianDecoder(nn.Module):
     def __init__(self, latent_dim, output_dim):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(latent_dim, 128), nn.ReLU(),
-            nn.Linear(128, 64), nn.ReLU(),
-            nn.Linear(64, 2 * output_dim)
+            nn.Linear(latent_dim, 256), nn.GELU(),     
+            nn.Linear(256, 128), nn.GELU(),
+            nn.Linear(128, 2 * output_dim)
         )
 
     def forward(self, z):
@@ -41,13 +41,14 @@ class GaussianDecoder(nn.Module):
         return td.Independent(td.Normal(loc=mean, scale=std), 1)
 
 
+
 class VAE(nn.Module):
     def __init__(self, input_dim=50, latent_dim=2):
         super().__init__()
 
         encoder_net = nn.Sequential(
-            nn.Linear(input_dim, 128), nn.ReLU(),
-            nn.Linear(128, 64), nn.ReLU(),
+            nn.Linear(input_dim, 128), nn.GELU(),
+            nn.Linear(128, 64), nn.GELU(),
             nn.Linear(64, 2 * latent_dim)  # outputs both mean and log_std
         )
 
@@ -55,12 +56,18 @@ class VAE(nn.Module):
         self.encoder = GaussianEncoder(encoder_net)
         self.decoder = GaussianDecoder(latent_dim, input_dim)
 
-    def elbo(self, x, beta=1.0):
+    def elbo(self, x, beta=1.0, return_parts=False):
         q = self.encoder(x)
         z = q.rsample()
-        recon_logprob = self.decoder(z).log_prob(x)
+        p = self.decoder(z)
+        recon_logprob = p.log_prob(x)
         kl = q.log_prob(z) - self.prior().log_prob(z)
-        return (recon_logprob - beta * kl).mean()
+        elbo_val = (recon_logprob - beta * kl).mean()
+
+        if return_parts:
+            return elbo_val, recon_logprob.mean(), kl.mean()
+        return elbo_val
+
 
     def forward(self, x):
         return -self.elbo(x)

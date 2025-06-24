@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 import torch.optim as optim
 
-from src.vae_new import VAE
+from src.vae import VAE
 
 def main():
     # Config
@@ -27,6 +27,13 @@ def main():
 
     # Data
     data = np.load("data/tasic-pca50.npy")
+    print("PCA mean:", data.mean(axis=0).mean())
+    print("PCA std:", data.std(axis=0).mean())
+    # Normalize PCA scores to mean 0, std 1
+    data = (data - data.mean(axis=0)) / data.std(axis=0)
+    print("PCA mean:", data.mean(axis=0).mean())
+    print("PCA std:", data.std(axis=0).mean())
+
     tensor_data = torch.tensor(data, dtype=torch.float32)
     val_ratio = 0.1
     n_val = int(len(data) * val_ratio)
@@ -67,8 +74,10 @@ def main():
                 val_loss += vae(x).item()
         val_loss /= len(val_loader)
         val_losses.append(val_loss)
+        elbo, recon, kl = vae.elbo(x, beta=beta, return_parts=True)
 
         print(f"Epoch {epoch+1} | Train: {train_loss:.2f} | Val: {val_loss:.2f}")
+        print(f"Epoch {epoch+1} | Recon: {-recon.item():.2f} | KL: {kl.item():.2f} | ELBO: {-elbo.item():.2f}")
 
         if val_loss < best_val:
             best_val = val_loss

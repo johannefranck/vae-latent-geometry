@@ -4,9 +4,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from src.vae_new import VAE
-
-
+from src.vae import VAE
 
 
 class GeodesicSpline(nn.Module):
@@ -15,59 +13,36 @@ class GeodesicSpline(nn.Module):
         self.a, self.b = point_pair
         self.n_poly = n_poly
         self.basis = basis
-        self.omega = nn.Parameter(torch.randn(basis.shape[1], self.a.shape[0]) * 5)
+        self.omega = nn.Parameter(torch.randn(basis.shape[1], self.a.shape[0]))
 
     # def eval_piecewise_poly(self, t, coeffs):
-    #     """
-    #     Evaluate piecewise cubic spline.
-
-    #     t: (T,) time values in [0,1]
-    #     coeffs: (n_poly, 4, d) spline coefficients
-    #     returns: (T, d)
-    #     """
+    #     if t.ndim == 2 and t.shape[1] == 1:
+    #         t = t.squeeze(1)  # (T,)
     #     T = t.shape[0]
     #     n_poly = coeffs.shape[0]
-    #     d = coeffs.shape[2]
 
     #     seg_idx = torch.clamp((t * n_poly).floor().long(), max=n_poly - 1)  # (T,)
     #     local_t = t * n_poly - seg_idx.float()  # (T,)
-    #     #print(local_t.shape, local_t.dtype)
-    #     local_t = local_t.squeeze(-1) if local_t.ndim > 1 else local_t  # ensure (T,)
-        
     #     powers = torch.stack([local_t**i for i in range(4)], dim=1)  # (T, 4)
-    #     # # make powers (T,4,1)
-    #     # powers = powers.unsqueeze(-1)  # (T, 4, 1)
-    #     #print("Powers shape:", powers.shape)
-    #     segment_coefs = coeffs[seg_idx]  # (T, 1, 4, d)
-    #     segment_coefs = segment_coefs.squeeze(1)  # (T, 4, d)
-    #     #print("Segment coefs shape:", segment_coefs.shape)
+
+    #     segment_coefs = coeffs[seg_idx]  # (T, 4, d)
     #     return torch.einsum("ti,tid->td", powers, segment_coefs)
-
     def eval_piecewise_poly(self, t, coeffs):
-        if t.ndim == 2 and t.shape[1] == 1:
-            t = t.squeeze(1)  # (T,)
-        T = t.shape[0]
-        n_poly = coeffs.shape[0]
-
-        seg_idx = torch.clamp((t * n_poly).floor().long(), max=n_poly - 1)  # (T,)
-        local_t = t * n_poly - seg_idx.float()  # (T,)
+        t = t.flatten()
+        seg_idx = torch.clamp((t * self.n_poly).floor().long(), max=self.n_poly - 1)
+        local_t = t * self.n_poly - seg_idx.float()
         powers = torch.stack([local_t**i for i in range(4)], dim=1)  # (T, 4)
+        seg_coefs = coeffs[seg_idx]  # (T, 4, dim)
+        return torch.einsum("ti,tid->td", powers, seg_coefs)
 
-        segment_coefs = coeffs[seg_idx]  # (T, 4, d)
-        return torch.einsum("ti,tid->td", powers, segment_coefs)
 
     def forward(self, t):
         coeffs = self.basis @ self.omega  # (4n, dim)
-        #print("Coefs shape (before view):", coeffs.shape)
-
         coeffs = coeffs.view(self.n_poly, 4, -1)  # (n_poly, 4, dim)
-        #print("Segment coefs shape (after view):", coeffs.shape)
 
         poly = self.eval_piecewise_poly(t, coeffs)
-        #print(poly)
         linear = (1 - t[:, None]) * self.a + t[:, None] * self.b
         return linear + poly
-
 
 
 def nullspace(C, rtol=1e-10):
@@ -76,67 +51,112 @@ def nullspace(C, rtol=1e-10):
     rank = (S > rtol * S[0]).sum()
     return Vh.T[:, rank:].contiguous()
 
-
-
 def construct_nullspace_basis(n_poly, device):
-    t_knots = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1]  # (n-1,) internal knots
-
     rows = []
 
-    # Boundary conditions: gamma(0) = 0, gamma(1) = 0
+    # Boundary: spline offset(0) = 0 and offset(1) = 0
     B = torch.zeros((2, 4 * n_poly), device=device, dtype=torch.float64)
-    B[0, 0] = 1.0
-    B[1, -4:] = 1.0
+    B[0, 0] = 1.0   # first segment at t=0
+    B[1, -4:] = 1.0 # last segment at t=1
     rows.append(B[0])
     rows.append(B[1])
+    tc = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1] # time cutoffs between polynomials
 
-    # Continuity constraints: C0, C1, C2 at internal knots
-    for i, t in enumerate(t_knots):
-        si = 4 * i
+    # C0, C1, C2 continuity at internal knots
+    for i in range(n_poly - 1):
+        si = 4 * i  # start index
+        t = tc[i] # global t at knot i
+        t=1
 
+        # C0 continuity
         c0 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-        c0[si:si+4] = torch.tensor([1.0, t, t**2, t**3], device=device, dtype=torch.float64)
-        c0[si+4:si+8] = -c0[si:si+4]
-        #print(f"c0 shape: {c0.shape}")
+        c0[si:si+4]     = torch.tensor([1.0, t, t**2, t**3], dtype=torch.float64, device=device)   # left at t=1
+        c0[si+4:si+8]   = -torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float64, device=device)       # right at t=0
         rows.append(c0)
 
+        # C1 continuity
         c1 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-        c1[si:si+4] = torch.tensor([0.0, 1.0, 2*t, 3*t**2], device=device, dtype=torch.float64)
-        c1[si+4:si+8] = -c1[si:si+4]
+        c1[si:si+4]     = torch.tensor([0.0, 1.0, 2.0*t, 3.0*t**2], dtype=torch.float64, device=device)        # d/dt left at t=1
+        c1[si+4:si+8]   = -torch.tensor([0.0, 1.0, 0.0, 0.0], dtype=torch.float64, device=device)       # d/dt right at t=0
         rows.append(c1)
 
+        # C2 continuity
         c2 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
-        c2[si:si+4] = torch.tensor([0.0, 0.0, 2.0, 6*t], device=device, dtype=torch.float64)
-        c2[si+4:si+8] = -c2[si:si+4]
+        c2[si:si+4]     = torch.tensor([0.0, 0.0, 2.0, 6.0*t], dtype=torch.float64, device=device)        # d²/dt² left at t=1
+        c2[si+4:si+8]   = -torch.tensor([0.0, 0.0, 2.0, 0.0], dtype=torch.float64, device=device)       # d²/dt² right at t=0
         rows.append(c2)
 
-    C = torch.stack(rows)  # shape: (3(n-1) + 2, 4n) = (11, 16) for n=4
+    C = torch.stack(rows)
 
-    #_, S, Vh = torch.linalg.svd(C)
-    #basis = Vh.T[:, C.shape[0]:].contiguous()
-    basis = nullspace(C)  # will now be high precision
-    basis = torch.linalg.qr(basis)[0]  # makes it orthonormal
-    residual = torch.norm(C @ basis)
-    print(f"New residual: {residual:.2e}")
+    basis = nullspace(C)
+    basis = torch.linalg.qr(basis)[0]
+    
+    print("||C @ basis|| =", torch.norm(C @ basis.double()).item())
+    print(f"New residual: {torch.norm(C @ basis):.2e}")
     print(f"rank of C: {torch.linalg.matrix_rank(C)}")
     print(f"expected rank: {C.shape[0]}")
+    return basis.to(dtype=torch.float32), C.to(dtype=torch.float32)
 
-    #print(f"norm: {torch.norm(C @ basis).item()}")
-    #print("Constructed constraint matrix C with shape:", C.shape)
-    #print("SVD singular values:", S)
-    # Check nullspace property
-    #print("Nullspace check (C @ basis):", torch.norm(C @ basis).item())
-    #print("Basis shape:", basis.shape)
-    basis = basis.to(dtype=torch.float32)
-    C = C.to(dtype=torch.float32)
-    return basis, C  # shape: (4n, d_free)
+
+# def construct_nullspace_basis(n_poly, device):
+#     t_knots = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1]  # (n-1,) internal knots
+
+#     rows = []
+
+#     # Boundary conditions: gamma(0) = 0, gamma(1) = 0
+#     B = torch.zeros((2, 4 * n_poly), device=device, dtype=torch.float64)
+#     B[0, 0] = 1.0
+#     B[1, -4:] = 1.0
+#     rows.append(B[0])
+#     rows.append(B[1])
+
+#     # Continuity constraints: C0, C1, C2 at internal knots
+#     for i, t in enumerate(t_knots):
+#         si = 4 * i
+
+#         c0 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
+#         c0[si:si+4] = torch.tensor([1.0, t, t**2, t**3], device=device, dtype=torch.float64)
+#         c0[si+4:si+8] = -c0[si:si+4]
+#         #print(f"c0 shape: {c0.shape}")
+#         rows.append(c0)
+
+#         c1 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
+#         c1[si:si+4] = torch.tensor([0.0, 1.0, 2*t, 3*t**2], device=device, dtype=torch.float64)
+#         c1[si+4:si+8] = -c1[si:si+4]
+#         rows.append(c1)
+
+#         c2 = torch.zeros(4 * n_poly, device=device, dtype=torch.float64)
+#         c2[si:si+4] = torch.tensor([0.0, 0.0, 2.0, 6*t], device=device, dtype=torch.float64)
+#         c2[si+4:si+8] = -c2[si:si+4]
+#         rows.append(c2)
+
+#     C = torch.stack(rows)  # shape: (3(n-1) + 2, 4n) = (11, 16) for n=4
+
+#     #_, S, Vh = torch.linalg.svd(C)
+#     #basis = Vh.T[:, C.shape[0]:].contiguous()
+#     basis = nullspace(C)  # will now be high precision
+#     basis = torch.linalg.qr(basis)[0]  # makes it orthonormal
+#     residual = torch.norm(C @ basis)
+#     print(f"New residual: {residual:.2e}")
+#     print(f"rank of C: {torch.linalg.matrix_rank(C)}")
+#     print(f"expected rank: {C.shape[0]}")
+
+#     #print(f"norm: {torch.norm(C @ basis).item()}")
+#     #print("Constructed constraint matrix C with shape:", C.shape)
+#     #print("SVD singular values:", S)
+#     # Check nullspace property
+#     #print("Nullspace check (C @ basis):", torch.norm(C @ basis).item())
+#     #print("Basis shape:", basis.shape)
+#     basis = basis.to(dtype=torch.float32)
+#     C = C.to(dtype=torch.float32)
+#     return basis, C  # shape: (4n, d_free)
 
 
 
 
 def compute_energy(spline, decoder, t_vals):
     z = spline(t_vals)  # (T, latent_dim)
-    x = decoder(z).mean  # (T, data_dim) — you might need to flatten if needed
+    x = decoder(z).mean  # (T, data_dim)
     x_flat = x.view(x.size(0), -1)  # Flatten to (T, obs_dim)
 
     diffs = x_flat[1:] - x_flat[:-1]
@@ -148,11 +168,14 @@ def compute_energy(spline, decoder, t_vals):
 
 # ------------------ Optimization ------------------
 def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta=1e-6):
-    optimizer = optim.Adam([spline.omega], lr=lr)
-    t_vals = torch.linspace(0, 1, 2000, device=spline.omega.device)
+    # Automatically get the correct parameter tensor
+    param = spline.omega if hasattr(spline, "omega") else spline.params
+    optimizer = optim.Adam([param], lr=lr)
+
+    t_vals = torch.linspace(0, 1, 2000, device=param.device)
 
     best_energy = compute_energy(spline, decoder, t_vals).item()
-    best_params = spline.omega.data.clone()
+    best_params = param.data.clone()
     patience_counter = 0
 
     for step in range(steps):
@@ -160,8 +183,8 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
         energy = compute_energy(spline, decoder, t_vals)
         energy.backward()
 
-        if step >= 2500:
-            torch.nn.utils.clip_grad_value_([spline.omega], clip_value=0.1)
+        # if step >= 2500:
+        #     torch.nn.utils.clip_grad_value_([spline.omega], clip_value=0.1)
 
         optimizer.step()
 
@@ -169,20 +192,20 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
         rel_improvement = (best_energy - new_energy) / best_energy
         if rel_improvement > delta:
             best_energy = new_energy
-            best_params = spline.omega.data.clone()
+            best_params = param.data.clone()
             patience_counter = 0
         else:
             patience_counter += 1
 
         if step % 50 == 0:
-            print(f"Step {step:4d}: Energy = {new_energy:.4f} | ω grad norm = {spline.omega.grad.norm():.4f}")
+            print(f"Step {step:4d}: Energy = {new_energy:.4f} | ω grad norm = {param.grad.norm():.4f}")
 
         if patience_counter > patience:
             print("Early stopping.")
             break
 
-    spline.omega.data.copy_(best_params)
-    print(f"omegas: {spline.omega.data.cpu().numpy()}")
+    param.data.copy_(best_params)
+    print(f"omegas: {param.data.cpu().numpy()}")
     return spline
 
 
@@ -196,43 +219,23 @@ if __name__ == "__main__":
     vae.eval()
     decoder = vae.decoder
 
-    # Define point pair (e.g. two samples in latent space)
-    a = torch.tensor([-20, 25], device=device)
-    b = torch.tensor([20, -55], device=device)
+    # some points
+    a = torch.tensor([-0.5, -0.5], device=device)
+    b = torch.tensor([0.5, 0.5], device=device)
     pair = (a, b)
 
-    n_poly = 8
+    n_poly = 4
     basis, C = construct_nullspace_basis(n_poly, device)
 
-    
     spline = GeodesicSpline(pair, basis, n_poly).to(device)
+    # spline = TorchGeodesic(decoder, n_poly, torch.stack(pair).to(device), device=device)
+    spline = optimize_spline(spline, decoder, C, steps=500, lr=1e-3, patience=500)
 
-    spline = optimize_spline(spline, decoder, C, steps=2000, lr=1e-3, patience=500)
-
-    save_path = "src/artifacts/spline_ab.pt"
-    torch.save({
-        "omega": spline.omega.data.cpu(),
-        "a": a.cpu(),
-        "b": b.cpu(),
-        "basis": basis.cpu(),
-        "n_poly": n_poly
-    }, save_path)
-    print(f"Saved spline to: {save_path}")
-
-
-# with torch.no_grad():
-    # t = torch.linspace(0, 1, 2000, device=device)
-    # z = spline(t).cpu().numpy()
-
-    # Compute first and second derivatives
-    # dz = np.gradient(z, axis=0) * 1000
-    # ddz = np.gradient(dz, axis=0) * 1000
+    # 
     t = torch.linspace(0, 1, 2000, device=device, requires_grad=True)
+    t = t[:-1]  # remove last point to avoid duplicate at t=1
     z = spline(t)
 
-    # Derivatives
-    # dz = torch.autograd.grad(z, t, grad_outputs=torch.ones_like(z), create_graph=True)[0]
-    # ddz = torch.autograd.grad(dz, t, grad_outputs=torch.ones_like(dz), create_graph=True)[0]
     # Derivatives
     dz = torch.zeros_like(z)
     for i in range(z.shape[1]):
@@ -276,5 +279,5 @@ if __name__ == "__main__":
 
 
     plt.tight_layout()
-    plt.savefig("src/plots/spline_loaded.png", dpi=300)
-    print("Saved plot to src/plots/spline_loaded.png")
+    plt.savefig("src/plots/spline_loaded_2.png", dpi=300)
+    print("Saved plot to src/plots/spline_loaded_2.png")

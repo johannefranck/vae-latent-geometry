@@ -204,7 +204,7 @@ def main():
     lengths = [len(p) for p in all_paths]
     print(f"Min path length: {min(lengths)}, Max path length: {max(lengths)}, Avg: {np.mean(lengths):.2f}")
         
-    with open("src/artifacts/dijkstra_paths_avae.pkl", "wb") as f:
+    with open("src/artifacts/dijkstra_paths.pkl", "wb") as f:
         pickle.dump(all_paths, f)
 
 
