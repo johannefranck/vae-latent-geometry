@@ -3,8 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 from pathlib import Path
-from src.vae import VAE
+from src.vae_good import VAE
 
 import random
 import os
@@ -169,7 +170,7 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
 
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    decoder_path = "src/artifacts/vae_best.pth"
+    decoder_path = "src/artifacts/vae_best_avae.pth"
     vae = VAE(input_dim=50, latent_dim=2).to(device)
     vae.load_state_dict(torch.load(decoder_path, map_location=device))
     vae.eval()
@@ -180,7 +181,7 @@ if __name__ == "__main__":
     b = torch.tensor([0.5, 0.5], device=device)
     pair = (a, b)
 
-    n_poly = 4
+    n_poly = 8
     basis, C = construct_nullspace_basis(n_poly, device)
 
     spline = GeodesicSpline(pair, basis, n_poly).to(device)
@@ -188,6 +189,17 @@ if __name__ == "__main__":
     spline = optimize_spline(spline, decoder, C, steps=2500, lr=1e-3, patience=500)
     spline_init = GeodesicSpline(pair, basis, n_poly).to(device)
     spline_init.omega.data.copy_(omega_init)
+
+    # save splines as objects
+    torch.save({
+        "a": a,
+        "b": b,
+        "n_poly": n_poly,
+        "basis": basis,
+        "omega_init": omega_init,
+        "omega_optimized": spline.omega.data.clone()
+    }, "src/artifacts/spline_pair.pt")
+
 
 
     # 

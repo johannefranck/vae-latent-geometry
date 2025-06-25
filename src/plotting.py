@@ -6,7 +6,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from src.vae import VAE
 from matplotlib import colormaps
 
 
@@ -335,8 +334,8 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, filename
 
     sns.scatterplot(x=x, y=y, hue=labels, palette="tab20", s=4, alpha=0.4, legend=False, ax=ax)
 
-    t_vals = torch.linspace(0, 1, 200)
     for spline in splines:
+        t_vals = torch.linspace(0, 1, 200, device=spline.omega.device)
         z_path = spline(t_vals).detach().cpu().numpy()
         ax.plot(z_path[:, 0], z_path[:, 1], '#30D5C8', linewidth=1.5)
 
