@@ -155,7 +155,7 @@ def main():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("src/plots/all_splines_combined.png", dpi=300)
+    plt.savefig("src/plots/splines_init_dijkstra.png", dpi=300)
     plt.close()
 
     # Save all splines to disk in a compatible format

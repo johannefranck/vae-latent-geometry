@@ -297,7 +297,6 @@ def plot_latents_with_density(latents, labels, res=300, filename="src/plots/aml_
 
 
 def plot_latent_density_with_splines(latents, labels, splines, res=300, filename="src/plots/latent_density_with_splines.png"):
-
     x = latents[:, 0]
     y = latents[:, 1]
 
@@ -321,7 +320,7 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, filename
     Gx = 1 / (density + epsilon)
     log_metric = np.log1p(Gx).reshape(xi.shape)
 
-    # Plot
+    # Plot setup
     fig, ax = plt.subplots(figsize=(8, 8))
     im = ax.imshow(
         log_metric.T,
@@ -334,10 +333,24 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, filename
 
     sns.scatterplot(x=x, y=y, hue=labels, palette="tab20", s=4, alpha=0.4, legend=False, ax=ax)
 
-    for spline in splines:
-        t_vals = torch.linspace(0, 1, 200, device=spline.omega.device)
-        z_path = spline(t_vals).detach().cpu().numpy()
-        ax.plot(z_path[:, 0], z_path[:, 1], '#30D5C8', linewidth=1.5)
+    # Plot splines
+    from matplotlib import cm
+    colors = cm.get_cmap("tab10", len(splines))
+
+    for i, spline_pair in enumerate(splines):
+        color = colors(i)
+        if isinstance(spline_pair, (list, tuple)):
+            spline_init, spline_opt = spline_pair
+            t_vals = torch.linspace(0, 1, 200, device=spline_init.omega.device)
+            z_init = spline_init(t_vals).detach().cpu().numpy()
+            z_opt = spline_opt(t_vals).detach().cpu().numpy()
+            ax.plot(z_init[:, 0], z_init[:, 1], '--', linewidth=1.2, alpha=0.6, color=color)
+            ax.plot(z_opt[:, 0], z_opt[:, 1], '-', linewidth=2.0, color=color)
+        else:
+            spline = spline_pair
+            t_vals = torch.linspace(0, 1, 200, device=spline.omega.device)
+            z_path = spline(t_vals).detach().cpu().numpy()
+            ax.plot(z_path[:, 0], z_path[:, 1], '-', linewidth=1.5, color=color)
 
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
@@ -345,7 +358,6 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, filename
     ax.set_ylabel("z₂")
     ax.set_title("Latent Space with Metric-Based Background and Splines")
 
-    # Colorbar (aligned to axis height
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
     cbar = fig.colorbar(im, cax=cax)
