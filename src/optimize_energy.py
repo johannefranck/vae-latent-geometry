@@ -96,10 +96,10 @@ def construct_nullspace_basis(n_poly, device):
     basis = nullspace(C)
     basis = torch.linalg.qr(basis)[0]
     
-    print("||C @ basis|| =", torch.norm(C @ basis.double()).item())
-    print(f"New residual: {torch.norm(C @ basis):.2e}")
-    print(f"rank of C: {torch.linalg.matrix_rank(C)}")
-    print(f"expected rank: {C.shape[0]}")
+    # print("||C @ basis|| =", torch.norm(C @ basis.double()).item())
+    # print(f"New residual: {torch.norm(C @ basis):.2e}")
+    # print(f"rank of C: {torch.linalg.matrix_rank(C)}")
+    # print(f"expected rank: {C.shape[0]}")
     return basis.to(dtype=torch.float32), C.to(dtype=torch.float32)
 
 
