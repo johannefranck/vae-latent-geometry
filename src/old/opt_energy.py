@@ -1,10 +1,21 @@
 import torch
 import torch.nn as nn
+import random
+import numpy as np
 import os
-# Import the actual VAE class from the user's source
-# Ensure your src/vae.py contains a VAE class with a 'decoder_net' attribute
-# that is a torch.nn.Module and performs the decoding.
 from src.vae import VAE 
+
+
+def set_seed(seed=12):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.use_deterministic_algorithms(True)
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+set_seed(12)
 
 # --- TorchGeodesic Class ---
 class TorchGeodesic(torch.nn.Module):
@@ -15,13 +26,15 @@ class TorchGeodesic(torch.nn.Module):
         self.point_pair = point_pair.to(device)
         self.basis = self.init_basis()  # (num_free_params, 4 * n_poly)
         self.dim = point_pair.shape[-1] # (2, dim)
-        self.params =torch.nn.Parameter(1* torch.zeros((self.basis.shape[1], self.dim), device=device)) # (num_free_params, dim)
+        # self.params =torch.nn.Parameter(1* torch.zeros((self.basis.shape[1], self.dim), device=device)) # (num_free_params, dim)
+        gen = torch.Generator(device=device).manual_seed(12)
+        self.params = torch.nn.Parameter(torch.randn(self.basis.shape[1], self.dim, generator=gen, device=device))
         self.point_pair = point_pair.to(device)
 
     def forward(self, t):
         line = self._eval_line(t, self.point_pair)
         poly = self._eval_poly(t)
-        return (line + poly).T
+        return line + poly #(line + poly).T
 
     def calculate_energy(self, t_):
         latent = self.forward(t_)
@@ -43,6 +56,7 @@ class TorchGeodesic(torch.nn.Module):
 
         for i in range(np - 1):
             si = 4 * i
+            print(f"tc index: {tc[i]}")
             fill_0 = torch.tensor([1.0, tc[i], tc[i] ** 2, tc[i] ** 3], device=self.point_pair.device)
             zeroth[i, si:si + 4] = fill_0
             zeroth[i, si + 4:si + 8] = -fill_0      
@@ -60,18 +74,42 @@ class TorchGeodesic(torch.nn.Module):
     def init_basis(self):
         return self._basis()
     
+    # def _eval_line(self, t, point_pair):
+    #     p0, p1 = point_pair[0, :], point_pair[1, :]
+    #     a, b = p1 - p0, p0
+    #     return a[:, None] * t + b[:, None]
     def _eval_line(self, t, point_pair):
         p0, p1 = point_pair[0, :], point_pair[1, :]
         a, b = p1 - p0, p0
-        return a[:, None] * t + b[:, None]
+        #return (a[:, None] * t + b[:, None]).T  # now (T, dim)
+        return (a[None, :] * t[:, None] + b[None, :])  # GOOD: outputs (T, dim)
+
+
     
+    # def _eval_poly(self, t):
+    #     # coefs = self.basis @ self.params
+    #     # coefs = coefs.reshape(self.n_poly, 4, self.dim)
+    #     # idx = torch.floor(t * self.n_poly).clip(0, self.n_poly - 1).long()
+    #     # coefs_idx = coefs[idx]  # t × n_term × d
+    #     # tp = t ** torch.arange(4, device=self.point_pair.device)[:, None]
+    #     # return torch.einsum("ted,et->td", coefs_idx, tp).T
+    # def _eval_poly(self, t):
+    #     print("hej")
+    #     idx = torch.floor(t * self.n_poly).clip(0, self.n_poly - 1).long()
+    #     local_t = t * self.n_poly - idx.float()
+    #     powers = torch.stack([local_t**i for i in range(4)], dim=1)  # (T, 4)
+
+    #     coefs = self.basis @ self.params  # (4n, dim)
+    #     coefs = coefs.view(self.n_poly, 4, self.dim)  # (n_poly, 4, dim)
+    #     coefs_idx = coefs[idx]  # (T, 4, dim)
+
+    #     return torch.einsum("ti,tid->td", powers, coefs_idx)
+
     def _eval_poly(self, t):
-        coefs = self.basis @ self.params
-        coefs = coefs.reshape(self.n_poly, 4, self.dim)
-        idx = torch.floor(t * self.n_poly).clip(0, self.n_poly - 1).long()
-        coefs_idx = coefs[idx]  # t × n_term × d
-        tp = t ** torch.arange(4, device=self.point_pair.device)[:, None]
-        return torch.einsum("ted,et->td", coefs_idx, tp).T
+        coefs = self.basis @ self.params  # (4n, dim)
+        powers = torch.stack([t**i for i in range(4 * self.n_poly)], dim=1)  # (T, 4n)
+        return powers @ coefs  # (T, dim)
+
     
 
 # --- Main Execution Block ---
@@ -100,7 +138,7 @@ def main():
     actual_decoder = vae.decoder  # This is your GaussianDecoder instance
 
     # 3. Initialize TorchGeodesic
-    n_poly = 3
+    n_poly = 4
     point_pair = torch.tensor([[-0.5, -0.5], [0.5, 0.5]], dtype=torch.float32, device=device)
 
     print(f"\nInitializing TorchGeodesic with n_poly={n_poly} and point_pair={point_pair.tolist()}")
@@ -188,27 +226,40 @@ def main():
 
     # Convert to NumPy
     t_np = t_eval.detach().cpu().numpy()
+    z_np = z.detach().cpu().numpy()
     dz_np = dz.detach().cpu().numpy()
     ddz_np = ddz.detach().cpu().numpy()
 
     # Plot
-    fig, axs = plt.subplots(2, 1, figsize=(8, 6))
+    fig, axs = plt.subplots(3, 1, figsize=(8, 12))
 
-    axs[0].plot(t_np, dz_np[:, 0], label="dz₁/dt")
-    axs[0].plot(t_np, dz_np[:, 1], label="dz₂/dt")
-    axs[0].set_title("First Derivative (Velocity)")
+    # --- Spline Curve ---
+    axs[0].plot(z_np[:, 0], z_np[:, 1], 'r-', lw=2, label='Geodesic Spline')
+    axs[0].scatter([point_pair[0, 0].item(), point_pair[1, 0].item()],
+                [point_pair[0, 1].item(), point_pair[1, 1].item()],
+                c='black', label='Endpoints')
+    axs[0].set_title("Spline in Latent Space")
+    axs[0].axis("equal")
     axs[0].legend()
-    axs[0].grid(True)
 
-    axs[1].plot(t_np, ddz_np[:, 0], label="d²z₁/dt²")
-    axs[1].plot(t_np, ddz_np[:, 1], label="d²z₂/dt²")
-    axs[1].set_title("Second Derivative (Acceleration)")
+    # --- First Derivative ---
+    axs[1].plot(t_np, dz_np[:, 0], label="dz₁/dt")
+    axs[1].plot(t_np, dz_np[:, 1], label="dz₂/dt")
+    axs[1].set_title("First Derivative (Velocity)")
     axs[1].legend()
     axs[1].grid(True)
 
+    # --- Second Derivative ---
+    axs[2].plot(t_np, ddz_np[:, 0], label="d²z₁/dt²")
+    axs[2].plot(t_np, ddz_np[:, 1], label="d²z₂/dt²")
+    axs[2].set_title("Second Derivative (Acceleration)")
+    axs[2].legend()
+    axs[2].grid(True)
+
     plt.tight_layout()
-    plt.savefig("spline_smoothness_check.png", dpi=300)
+    plt.savefig("src/plots/spline_check.png", dpi=300)
     plt.show()
+
 
 
 

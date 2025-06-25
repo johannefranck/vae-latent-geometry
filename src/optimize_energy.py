@@ -28,9 +28,8 @@ class GeodesicSpline(nn.Module):
         self.a, self.b = point_pair
         self.n_poly = n_poly
         self.basis = basis
-        gen = torch.Generator(device=self.a.device).manual_seed(22)
-        self.omega = nn.Parameter(torch.randn(basis.shape[1], self.a.shape[0], generator=gen, device=self.a.device))
-
+        gen = torch.Generator(device=self.a.device).manual_seed(12)
+        self.omega = nn.Parameter(0.01* torch.randn(basis.shape[1], self.a.shape[0], generator=gen, device=self.a.device))
 
     def eval_piecewise_poly(self, t, coeffs):
         t = t.flatten()
@@ -54,6 +53,7 @@ def nullspace(C, rtol=1e-10):
     U, S, Vh = torch.linalg.svd(C, full_matrices=True)
     rank = (S > rtol * S[0]).sum()
     return Vh.T[:, rank:].contiguous()
+
 
 def construct_nullspace_basis(n_poly, device):
     rows = []
@@ -130,7 +130,14 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
     for step in range(steps):
         optimizer.zero_grad()
         energy = compute_energy(spline, decoder, t_vals)
-        energy.backward()
+
+        
+        # Add penalty on deviation from b at t=1
+        t_end = torch.tensor([1.0], device=param.device)
+        end_error = (spline(t_end) - spline.b).pow(2).sum()
+        full_loss = energy + 1000.0 * end_error  # weight penalty
+
+        full_loss.backward()
 
         # if step >= 2500:
         #     torch.nn.utils.clip_grad_value_([spline.omega], clip_value=0.1)
@@ -177,8 +184,11 @@ if __name__ == "__main__":
     basis, C = construct_nullspace_basis(n_poly, device)
 
     spline = GeodesicSpline(pair, basis, n_poly).to(device)
-    # spline = TorchGeodesic(decoder, n_poly, torch.stack(pair).to(device), device=device)
-    spline = optimize_spline(spline, decoder, C, steps=500, lr=1e-3, patience=500)
+    omega_init = spline.omega.data.clone()
+    spline = optimize_spline(spline, decoder, C, steps=2500, lr=1e-3, patience=500)
+    spline_init = GeodesicSpline(pair, basis, n_poly).to(device)
+    spline_init.omega.data.copy_(omega_init)
+
 
     # 
     t = torch.linspace(0, 1, 2000, device=device, requires_grad=True)
@@ -192,7 +202,7 @@ if __name__ == "__main__":
 
     ddz = torch.zeros_like(z)
     for i in range(dz.shape[1]):
-        ddz[:, i] = torch.autograd.grad(dz[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0] * n_poly
+        ddz[:, i] = torch.autograd.grad(dz[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0] * (n_poly**2)
 
     print("Spline shape:", z.shape)
     print("Velocity shape:", dz.shape)
@@ -226,7 +236,18 @@ if __name__ == "__main__":
     print("Expected a:  ", a.cpu().numpy())
     print("Expected b:  ", b.cpu().numpy())
 
+    # Compute and plot knot locations
+    knot_times = torch.linspace(0, 1, n_poly + 1, device=device)[:-1]  # Exclude final t=1 to avoid duplication
+    with torch.no_grad():
+        z_knots = spline(knot_times).cpu().numpy()
+        z_init = spline_init(t).cpu().numpy()
+
+    axs[0].plot(z_init[:, 0], z_init[:, 1], 'k--', lw=1.5, label='Initial Spline')
+    axs[0].scatter(z_knots[:, 0], z_knots[:, 1], c='blue', marker='x', s=60, label='Knots')
+    for i, (x, y) in enumerate(z_knots):
+        axs[0].text(x, y, f'k{i}', fontsize=8, ha='left', va='bottom', color='blue')
+
 
     plt.tight_layout()
-    plt.savefig("src/plots/spline_loaded_2.png", dpi=300)
-    print("Saved plot to src/plots/spline_loaded_2.png")
+    plt.savefig("src/plots/spline_smoothness.png", dpi=300)
+    print("Saved plot to src/plots/spline_smoothness.png")
