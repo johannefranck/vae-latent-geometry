@@ -61,8 +61,8 @@ def construct_nullspace_basis(n_poly, device):
 
     # Boundary: spline offset(0) = 0 and offset(1) = 0
     B = torch.zeros((2, 4 * n_poly), device=device, dtype=torch.float64)
-    B[0, 0] = 1.0   # first segment at t=0
-    B[1, -4:] = 1.0 # last segment at t=1
+    B[0, 0] = 1.0     # first segment at t=0
+    B[1, -4:] = 1.0   # last segment at t=1
     rows.append(B[0])
     rows.append(B[1])
     tc = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1] # time cutoffs between polynomials
@@ -192,7 +192,8 @@ if __name__ == "__main__":
     vae.eval()
     decoder = vae.decoder
 
-    spline_batch = torch.load("src/artifacts/spline_batch.pt", map_location=device)
+    loaded = torch.load("src/artifacts/spline_batch.pt", map_location=device)
+    spline_batch = loaded["spline_data"]
     optimized_batch = []
 
     os.makedirs("src/plots", exist_ok=True)
@@ -227,10 +228,14 @@ if __name__ == "__main__":
         color = colors[i % len(colors)]
         plt.plot(z_init[:, 0], z_init[:, 1], linestyle="--", color=color)
         plt.plot(z_opt[:, 0], z_opt[:, 1], linestyle="-", color=color, label=f"Spline {i+1}/{len(spline_batch)}")
+        
+        a_label = data["a_label"]
+        b_label = data["b_label"]
 
         optimized_batch.append({
             "a": a.cpu(),
             "b": b.cpu(),
+            "cluster_pair": (a_label, b_label),
             "n_poly": n_poly,
             "basis": basis.cpu(),
             "omega_init": omega_init.cpu(),

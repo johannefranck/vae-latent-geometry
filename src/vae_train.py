@@ -16,7 +16,7 @@ def main():
     with open("configs/config.yaml", "r") as f:
         config = yaml.safe_load(f)
 
-    SEED = 12
+    SEED = 123
     EPOCHS = config["training"]["epochs"]
     BATCH_SIZE = config["training"]["batch_size"]
     LR = config["training"]["lr"]
@@ -63,8 +63,8 @@ def main():
     optimizer = optim.Adam(vae.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.5)
 
-    filename_suffix = f"VAE_ld{LATENT_DIM}_ep{EPOCHS}_bs{BATCH_SIZE}_lr{LR:.0e}"
-    best_model_path = os.path.join(ARTIFACT_DIR, f"vae_best_avae.pth")
+    filename_suffix = f"VAE_ld{LATENT_DIM}_ep{EPOCHS}_bs{BATCH_SIZE}_lr{LR:.0e}_seed{SEED}"
+    best_model_path = os.path.join(ARTIFACT_DIR, f"vae_best_seed{SEED}.pth")
 
     train_losses, val_losses = [], []
     best_val_loss = float("inf")

@@ -1,12 +1,13 @@
 import os
+import json
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from itertools import combinations
 from scipy.spatial import KDTree
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import dijkstra
 
+from src.select_representative_pairs import load_pairs
 from src.optimize_energy import GeodesicSpline, construct_nullspace_basis
 
 def set_seed(seed=12):
@@ -14,6 +15,7 @@ def set_seed(seed=12):
     np.random.seed(seed)
     torch.use_deterministic_algorithms(True)
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
 set_seed(12)
 
 def create_latent_grid_from_data(latents, n_points_per_axis=150, margin=0.1):
@@ -60,42 +62,31 @@ def reconstruct_path(predecessors, start, end):
     path.append(start)
     return path[::-1]
 
-def select_representative_pairs(latents, labels, max_labels=133):
-    unique_labels = np.unique(labels)
-    selected_labels = unique_labels[:max_labels]
-    representatives = []
-    for lbl in selected_labels:
-        inds = np.where(labels == lbl)[0]
-        cluster = latents[inds]
-        center = cluster.mean(axis=0)
-        closest = inds[np.argmin(np.linalg.norm(cluster - center, axis=1))]
-        representatives.append(closest)
-    return list(combinations(representatives, 2))
-
 def main():
     latent_path = "src/artifacts/latents_VAE_ld2_ep100_bs64_lr1e-03.npy"
-    label_path = "data/tasic-ttypes.npy"
+    pairs_path = "src/artifacts/selected_pairs.json"
     os.makedirs("src/plots", exist_ok=True)
 
     n_poly = 4
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     latents = np.load(latent_path)
-    labels = np.load(label_path)
+
+    representatives, pairs = load_pairs(pairs_path)
 
     grid, _ = create_latent_grid_from_data(latents, n_points_per_axis=150)
     graph, tree = build_grid_graph(grid, k=8)
-
-    index_pairs = select_representative_pairs(latents, labels, max_labels=5)
     basis, _ = construct_nullspace_basis(n_poly=n_poly, device=device)
-
-    source_latents = latents[[i for i, _ in index_pairs]]
-    target_latents = latents[[j for _, j in index_pairs]]
 
     plt.figure(figsize=(8, 8))
     plt.scatter(latents[:, 0], latents[:, 1], c='lightgray', s=10, label='Latents')
 
-    for i, (z_start, z_end) in enumerate(zip(source_latents, target_latents)):
+    spline_data = []
+
+    for i, (idx_a, idx_b) in enumerate(pairs):
+        z_start = latents[idx_a]
+        z_end = latents[idx_b]
+
         start_idx = tree.query(z_start)[1]
         end_idx = tree.query(z_end)[1]
 
@@ -130,25 +121,23 @@ def main():
 
         optimizer.step(closure)
 
-        # Plot both the Dijkstra path and spline
         t = torch.linspace(0, 1, 1000, device=device)
         z = spline(t).detach().cpu().numpy()
 
-        plt.plot(path_coords[:, 0], path_coords[:, 1], 'k--', alpha=0.6, linewidth=1.5, label='Dijkstra Path' if i == 0 else None)
+        plt.plot(path_coords[:, 0], path_coords[:, 1], 'k--', alpha=0.6, linewidth=1.5, label='Dijkstra' if i == 0 else None)
         plt.plot(z[:, 0], z[:, 1], '-', alpha=1.0, linewidth=2, label='Fitted Spline' if i == 0 else None)
-
-        # Store spline info for later use in optimize_energy.py
-        if "spline_data" not in locals():
-            spline_data = []
 
         spline_data.append({
             "a": a.detach().cpu(),
             "b": b.detach().cpu(),
+            "a_index": idx_a,
+            "b_index": idx_b,
+            "a_label": next(rep["label"] for rep in representatives if rep["index"] == idx_a),
+            "b_label": next(rep["label"] for rep in representatives if rep["index"] == idx_b),
             "n_poly": n_poly,
             "basis": basis.detach().cpu(),
             "omega_init": spline.omega.detach().cpu()
         })
-
 
     plt.title("Latents with Dijkstra Paths and Fitted Splines")
     plt.axis("equal")
@@ -158,9 +147,13 @@ def main():
     plt.savefig("src/plots/splines_init_dijkstra.png", dpi=300)
     plt.close()
 
-    # Save all splines to disk in a compatible format
-    torch.save(spline_data, "src/artifacts/spline_batch.pt")
-    print("Saved all fitted splines to src/artifacts/spline_batch.pt")
+    torch.save({
+        "spline_data": spline_data,
+        "representatives": representatives,
+        "pairs": pairs
+    }, "src/artifacts/spline_batch.pt")
+
+    print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch.pt")
 
 if __name__ == "__main__":
     main()
