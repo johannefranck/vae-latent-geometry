@@ -295,16 +295,20 @@ def plot_latents_with_density(latents, labels, res=300, filename="src/plots/aml_
     plt.close()
 
 
-
-def plot_latent_density_with_splines(latents, labels, splines, res=300, filename="src/plots/latent_density_with_splines.png"):
+def plot_latent_density_with_splines(latents, labels, splines, res=300, seed=12, filename="src/plots/latent_density_with_splines.png"):
     x = latents[:, 0]
     y = latents[:, 1]
 
-    # Axis bounds with margin
-    margin_x = 0.1 * (x.max() - x.min())
-    margin_y = 0.1 * (y.max() - y.min())
-    xlim = (x.min() - margin_x, x.max() + margin_x)
-    ylim = (y.min() - margin_y, y.max() + margin_y)
+    # Axis bounds with square margin
+    x_span = x.max() - x.min()
+    y_span = y.max() - y.min()
+    max_span = max(x_span, y_span)
+    x_center = (x.max() + x.min()) / 2
+    y_center = (y.max() + y.min()) / 2
+    span_margin = 0.1 * max_span
+    half_span = max_span / 2 + span_margin
+    xlim = (x_center - half_span, x_center + half_span)
+    ylim = (y_center - half_span, y_center + half_span)
 
     # Grid and metric
     xi, yi = np.mgrid[xlim[0]:xlim[1]:res*1j, ylim[0]:ylim[1]:res*1j]
@@ -327,7 +331,6 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, filename
         origin='lower',
         extent=(*xlim, *ylim),
         cmap=colormaps['copper'],
-        aspect='equal',
         alpha=0.8
     )
 
@@ -354,16 +357,19 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, filename
 
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
+    ax.set_aspect("equal", adjustable="box")  # Maintain square shape
+
     ax.set_xlabel("z₁")
     ax.set_ylabel("z₂")
-    ax.set_title("Latent Space with Metric-Based Background and Splines")
+    ax.set_title(f"Geodesics in Latent Space (seed {seed})")
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
     cbar = fig.colorbar(im, cax=cax)
     cbar.set_label("Density-based metric value log(Gₓ)")
 
-    plt.tight_layout()
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
     plt.close()
+
+
 

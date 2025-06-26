@@ -1,4 +1,5 @@
 import torch
+import argparse
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,24 +10,35 @@ from src.select_representative_pairs import load_pairs
 from src.optimize_energy import GeodesicSpline
 from src.plotting import plot_latent_density_with_splines
 
+# ---- PARSE ARGUMENTS ----
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", type=int, required=True, help="Seed used to identify model/data")
+args = parser.parse_args()
+seed = args.seed
+
 # ---- CONFIG ----
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ARTIFACT_DIR = Path("src/artifacts")
 PLOT_DIR = Path("src/plots")
 PLOT_DIR.mkdir(parents=True, exist_ok=True)
-PLOT_PATH = PLOT_DIR / "density_with_splines.png"
+
+latents_path = ARTIFACT_DIR / f"latents_VAE_ld2_ep100_bs64_lr1e-03_seed{seed}.npy"
+decoder_path = ARTIFACT_DIR / f"vae_best_seed{seed}.pth"
+spline_path = ARTIFACT_DIR / f"spline_batch_optimized_seed{seed}.pt"
+plot_path_density = PLOT_DIR / f"density_with_splines_seed{seed}.png"
+plot_path_matrix = PLOT_DIR / f"geodesic_distance_seed{seed}.png"
 
 # ---- LOAD LATENTS + LABELS ----
-latents = np.load(ARTIFACT_DIR / "latents_VAE_ld2_ep100_bs64_lr1e-03.npy")
+latents = np.load(latents_path)
 labels = np.load("data/tasic-ttypes.npy")
 
 # ---- LOAD VAE + DECODER ----
 vae = VAE(input_dim=50, latent_dim=2).to(device)
-vae.load_state_dict(torch.load(ARTIFACT_DIR / "vae_best_avae.pth", map_location=device))
+vae.load_state_dict(torch.load(decoder_path, map_location=device))
 vae.eval()
 
 # ---- LOAD SPLINE BATCH ----
-batch_data = torch.load(ARTIFACT_DIR / "spline_batch_optimized.pt", map_location=device)
+batch_data = torch.load(spline_path, map_location=device)
 representatives, _ = load_pairs(ARTIFACT_DIR / "selected_pairs.json")
 cluster_ids = [rep["label"] for rep in representatives]
 spline_pairs = []
@@ -50,12 +62,10 @@ for entry in batch_data:
     spline_pairs.append((spline_init, spline_opt))
 
 # ---- CONSTRUCT GEODESIC DISTANCE MATRIX ----
-# Map point tensors to indices for matrix layout
 point_set = []
 index_map = {}
 current_index = 0
 
-# First collect all unique points
 for entry in batch_data:
     a_tuple = tuple(entry["a"].view(-1).tolist())
     b_tuple = tuple(entry["b"].view(-1).tolist())
@@ -68,35 +78,56 @@ for entry in batch_data:
 n_points = len(point_set)
 distance_matrix = np.full((n_points, n_points), np.nan)
 
-# Fill in distances
 for entry in batch_data:
     a_idx = index_map[tuple(entry["a"].view(-1).tolist())]
     b_idx = index_map[tuple(entry["b"].view(-1).tolist())]
     dist = entry["length_geodesic"]
     distance_matrix[a_idx, b_idx] = dist
-    distance_matrix[b_idx, a_idx] = dist  # symmetric
+    distance_matrix[b_idx, a_idx] = dist
 
-# ---- PLOT DISTANCE MATRIX ----
-# ---- PLOT with cluster IDs ----
-plt.figure(figsize=(8, 6))
-sns.heatmap(distance_matrix, 
-            annot=True, fmt=".1f", cmap="viridis",
-            xticklabels=cluster_ids, yticklabels=cluster_ids,
-            cbar_kws={"label": "Geodesic Distance"})
-plt.title("Geodesic Distance Matrix (Decoder Space)")
+# ---- PLOT GEODESIC DISTANCE MATRIX ----
+# self-distances should be 0
+np.fill_diagonal(distance_matrix, 0.0)
+
+plt.figure(figsize=(8, 8))
+sns.heatmap(
+    distance_matrix,
+    cmap="copper",              
+    square=True,               
+    annot=True,
+    fmt=".1f",
+    xticklabels=cluster_ids,
+    yticklabels=cluster_ids,
+    cbar_kws={"label": "Geodesic Distance"},
+    mask=None
+)
+plt.title(f"Geodesic Distance Matrix (seed {seed})")
 plt.xlabel("Cluster ID")
 plt.ylabel("Cluster ID")
 plt.tight_layout()
-plt.savefig(PLOT_DIR / "geodesic_distance_matrix_labeled.png", dpi=300)
-print("Saved: geodesic_distance_matrix_labeled.png")
+plt.savefig(plot_path_matrix, dpi=300)
+print(f"Saved: {plot_path_matrix}")
+
+# ---- SAVE DISTANCE MATRIX AS JSON ----
+json_matrix = {
+    "seed": seed,
+    "cluster_ids": cluster_ids,
+    "distance_matrix": distance_matrix.tolist()
+}
+json_path = ARTIFACT_DIR / f"geodesic_distances_seed{seed}.json"
+with open(json_path, "w") as f:
+    json.dump(json_matrix, f, indent=2)
+
+print(f"Saved: {json_path}")
 
 
-# ---- PLOT DENSITY WITH SPLINES INIT AND OPT ----
+# ---- PLOT LATENT DENSITY WITH SPLINES ----
 plot_latent_density_with_splines(
     latents=latents,
     labels=labels,
     splines=spline_pairs,
-    filename=str(PLOT_PATH)
+    seed=seed,
+    filename=str(plot_path_density)
 )
 
-print(f"Saved: {PLOT_PATH}")
+print(f"Saved: {plot_path_density}")

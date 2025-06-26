@@ -4,7 +4,6 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-import argparse
 from pathlib import Path
 from src.vae_good import VAE
 
@@ -187,23 +186,13 @@ def compute_geodesic_length(spline, decoder, steps=2000):
 # ------------------ Main ------------------
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, required=True, help="Seed used for VAE and file naming")
-    args = parser.parse_args()
-    seed = args.seed
-
-    decoder_path = f"src/artifacts/vae_best_seed{seed}.pth"
-    spline_path = f"src/artifacts/spline_batch_seed{seed}.pt"
-    out_plot_path = f"src/plots/optimized_vs_initial_splines_seed{seed}.png"
-    out_data_path = f"src/artifacts/spline_batch_optimized_seed{seed}.pt"
-
+    decoder_path = "src/artifacts/vae_best_avae.pth"
     vae = VAE(input_dim=50, latent_dim=2).to(device)
     vae.load_state_dict(torch.load(decoder_path, map_location=device))
-
     vae.eval()
     decoder = vae.decoder
 
-    loaded = torch.load(spline_path, map_location=device)
+    loaded = torch.load("src/artifacts/spline_batch.pt", map_location=device)
     spline_batch = loaded["spline_data"]
     optimized_batch = []
 
@@ -225,7 +214,7 @@ if __name__ == "__main__":
         spline_init = GeodesicSpline((a, b), basis, n_poly).to(device)
         spline_init.omega.data.copy_(omega_init)
 
-        spline = optimize_spline(spline, decoder, C, steps=1000, lr=1e-3, patience=500)
+        spline = optimize_spline(spline, decoder, C, steps=500, lr=1e-3, patience=500)
 
         # Geodesic and Euclidean lengths
         length_geodesic = compute_geodesic_length(spline, decoder)
@@ -260,8 +249,7 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(out_plot_path, dpi=300)
-    torch.save(optimized_batch, out_data_path)
-    print(f"Saved optimized splines to {out_data_path}")
-    print(f"Saved plot to {out_plot_path}")
-
+    plt.savefig("src/plots/optimized_vs_initial_splines.png", dpi=300)
+    torch.save(optimized_batch, "src/artifacts/spline_batch_optimized.pt")
+    print("Saved optimized splines to src/artifacts/spline_batch_optimized.pt")
+    print("Saved plot to src/plots/optimized_vs_initial_splines.png")

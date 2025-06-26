@@ -2,6 +2,8 @@ import os
 import json
 import numpy as np
 import torch
+import argparse
+import re
 import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
 from scipy.sparse import lil_matrix
@@ -62,16 +64,20 @@ def reconstruct_path(predecessors, start, end):
     path.append(start)
     return path[::-1]
 
-def main():
-    latent_path = "src/artifacts/latents_VAE_ld2_ep100_bs64_lr1e-03.npy"
+def extract_seed_from_path(path):
+    match = re.search(r"seed(\d+)", str(path))
+    return match.group(1) if match else "unknown"
+
+def main(latent_path):
     pairs_path = "src/artifacts/selected_pairs.json"
     os.makedirs("src/plots", exist_ok=True)
+
+    seed_suffix = extract_seed_from_path(latent_path)
 
     n_poly = 4
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     latents = np.load(latent_path)
-
     representatives, pairs = load_pairs(pairs_path)
 
     grid, _ = create_latent_grid_from_data(latents, n_points_per_axis=150)
@@ -144,16 +150,19 @@ def main():
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("src/plots/splines_init_dijkstra.png", dpi=300)
+    plt.savefig(f"src/plots/splines_init_dijkstra_seed{seed_suffix}.png", dpi=300)
     plt.close()
 
     torch.save({
         "spline_data": spline_data,
         "representatives": representatives,
         "pairs": pairs
-    }, "src/artifacts/spline_batch.pt")
+    }, f"src/artifacts/spline_batch_seed{seed_suffix}.pt")
 
-    print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch.pt")
+    print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch_seed{seed_suffix}.pt")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--latent_path", type=str, required=True, help="Path to latent .npy file")
+    args = parser.parse_args()
+    main(args.latent_path)

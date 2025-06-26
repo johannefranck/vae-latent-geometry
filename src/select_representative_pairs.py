@@ -41,11 +41,11 @@ def load_pairs(path="src/artifacts/selected_pairs.json"):
     return data["representatives"], data["pairs"]
 
 if __name__ == "__main__":
-    latent_path = "src/artifacts/latents_VAE_ld2_ep100_bs64_lr1e-03.npy"
+    latent_path = "src/artifacts/latents_VAE_ld2_ep100_bs64_lr1e-03_seed12.npy"
     label_path = "data/tasic-ttypes.npy"
 
     latents = np.load(latent_path)
     labels = np.load(label_path)
 
-    reps = select_representatives(latents, labels, max_labels=5)
+    reps = select_representatives(latents, labels, max_labels=10)
     save_pairs(reps)

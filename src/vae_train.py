@@ -16,7 +16,7 @@ def main():
     with open("configs/config.yaml", "r") as f:
         config = yaml.safe_load(f)
 
-    SEED = 123
+    SEED = 12
     EPOCHS = config["training"]["epochs"]
     BATCH_SIZE = config["training"]["batch_size"]
     LR = config["training"]["lr"]
