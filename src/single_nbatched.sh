@@ -1,10 +1,10 @@
 #!/bin/bash
-#BSUB -J tauoptimize                  # Job name
+#BSUB -J geodesic_single_decoder      # Job name
 #BSUB -q gpua100                      # GPU queue
 #BSUB -W 00:10                        # Max runtime (hh:mm)
 #BSUB -n 1                            # 1 core
-# add email
-#BSUB -u j
+#BSUB -B s204088@dtu.dk               # Send email at start
+#BSUB -N s204088@dtu.dk               # Send email at end of job
 #BSUB -R "rusage[mem=20000]"         # 20GB memory
 #BSUB -R "span[hosts=1]"             # All cores on same host
 #BSUB -o logs/tauopt_%J.out          # STDOUT
@@ -26,5 +26,7 @@ mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
 # Optional: set PYTHONPATH if your module structure needs it
 export PYTHONPATH=$PWD:$PYTHONPATH
 
-# Run the script
-python -m src.optimize_tau_energy
+# Run single decoder pipeline (none-batched)
+python -m src.single_decoder.init_spline --seed 12 #update!
+python -m src.single_decoder.optimize_energy --seed 12
+python -m src.single_decoder.density --seed 12

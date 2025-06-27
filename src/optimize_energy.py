@@ -4,6 +4,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import argparse
 from pathlib import Path
 from src.vae_good import VAE
 
@@ -61,8 +62,8 @@ def construct_nullspace_basis(n_poly, device):
 
     # Boundary: spline offset(0) = 0 and offset(1) = 0
     B = torch.zeros((2, 4 * n_poly), device=device, dtype=torch.float64)
-    B[0, 0] = 1.0   # first segment at t=0
-    B[1, -4:] = 1.0 # last segment at t=1
+    B[0, 0] = 1.0     # first segment at t=0
+    B[1, -4:] = 1.0   # last segment at t=1
     rows.append(B[0])
     rows.append(B[1])
     tc = torch.linspace(0, 1, n_poly + 1, device=device, dtype=torch.float64)[1:-1] # time cutoffs between polynomials
@@ -165,101 +166,103 @@ def optimize_spline(spline, decoder, C, steps=1000, lr=1e-2, patience=500, delta
     print(f"omegas: {param.data.cpu().numpy()}")
     return spline
 
+def compute_arc_length(spline, steps=2000):
+    t = torch.linspace(0, 1, steps, device=spline.omega.device)
+    z = spline(t)
+    diffs = z[1:] - z[:-1]
+    segment_lengths = torch.norm(diffs, dim=1)
+    return segment_lengths.sum().item()
+
+@torch.no_grad()
+def compute_geodesic_length(spline, decoder, steps=2000):
+    t = torch.linspace(0, 1, steps, device=spline.omega.device)
+    z = spline(t)
+    x = decoder(z).mean  # Decoded points in data space
+    diffs = x[1:] - x[:-1]
+    segment_lengths = torch.norm(diffs, dim=1)
+    return segment_lengths.sum().item()
+
+
 
 # ------------------ Main ------------------
-
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    decoder_path = "src/artifacts/vae_best_avae.pth"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, required=True, help="Seed used for VAE and file naming")
+    args = parser.parse_args()
+    seed = args.seed
+
+    decoder_path = f"src/artifacts/vae_best_seed{seed}.pth"
+    spline_path = f"src/artifacts/spline_batch_seed{seed}.pt"
+    out_plot_path = f"src/plots/optimized_vs_initial_splines_seed{seed}.png"
+    out_data_path = f"src/artifacts/spline_batch_optimized_seed{seed}.pt"
+
     vae = VAE(input_dim=50, latent_dim=2).to(device)
     vae.load_state_dict(torch.load(decoder_path, map_location=device))
+
     vae.eval()
     decoder = vae.decoder
 
-    # some points
-    a = torch.tensor([-0.5, -0.5], device=device)
-    b = torch.tensor([0.5, 0.5], device=device)
-    pair = (a, b)
+    loaded = torch.load(spline_path, map_location=device)
+    spline_batch = loaded["spline_data"]
+    optimized_batch = []
 
-    n_poly = 8
-    basis, C = construct_nullspace_basis(n_poly, device)
+    os.makedirs("src/plots", exist_ok=True)
+    plt.figure(figsize=(8, 8))
+    colors = plt.cm.tab10.colors
 
-    spline = GeodesicSpline(pair, basis, n_poly).to(device)
-    omega_init = spline.omega.data.clone()
-    spline = optimize_spline(spline, decoder, C, steps=2500, lr=1e-3, patience=500)
-    spline_init = GeodesicSpline(pair, basis, n_poly).to(device)
-    spline_init.omega.data.copy_(omega_init)
+    for i, data in enumerate(spline_batch):
+        a = data["a"].to(device)
+        b = data["b"].to(device)
+        basis = data["basis"].to(device)
+        omega_init = data["omega_init"].to(device)
+        n_poly = data["n_poly"]
+        _, C = construct_nullspace_basis(n_poly, device)
 
-    # save splines as objects
-    torch.save({
-        "a": a,
-        "b": b,
-        "n_poly": n_poly,
-        "basis": basis,
-        "omega_init": omega_init,
-        "omega_optimized": spline.omega.data.clone()
-    }, "src/artifacts/spline_pair.pt")
+        spline = GeodesicSpline((a, b), basis, n_poly).to(device)
+        spline.omega.data.copy_(omega_init)
 
+        spline_init = GeodesicSpline((a, b), basis, n_poly).to(device)
+        spline_init.omega.data.copy_(omega_init)
 
+        spline = optimize_spline(spline, decoder, C, steps=1000, lr=1e-3, patience=500)
 
-    # 
-    t = torch.linspace(0, 1, 2000, device=device, requires_grad=True)
-    t = t[:-1]  # remove last point to avoid duplicate at t=1
-    z = spline(t)
+        # Geodesic and Euclidean lengths
+        length_geodesic = compute_geodesic_length(spline, decoder)
+        length_euclidean = torch.norm(a - b).item()
+        print(f"[{i+1}/{len(spline_batch)}] Euclidean: {length_euclidean:.4f} | Geodesic: {length_geodesic:.4f}")
 
-    # Derivatives
-    dz = torch.zeros_like(z)
-    for i in range(z.shape[1]):
-        dz[:, i] = torch.autograd.grad(z[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0] * n_poly
+        t = torch.linspace(0, 1, 2000, device=device)
+        z_opt = spline(t).detach().cpu().numpy()
+        z_init = spline_init(t).detach().cpu().numpy()
 
-    ddz = torch.zeros_like(z)
-    for i in range(dz.shape[1]):
-        ddz[:, i] = torch.autograd.grad(dz[:, i], t, grad_outputs=torch.ones_like(t), create_graph=True)[0] * (n_poly**2)
+        color = colors[i % len(colors)]
+        plt.plot(z_init[:, 0], z_init[:, 1], linestyle="--", color=color)
+        plt.plot(z_opt[:, 0], z_opt[:, 1], linestyle="-", color=color)
+        
+        a_label = data["a_label"]
+        b_label = data["b_label"]
 
-    print("Spline shape:", z.shape)
-    print("Velocity shape:", dz.shape)
-    print("Acceleration shape:", ddz.shape)
-
-    # Detach for plotting
-    z_np = z.detach().cpu().numpy()
-    dz_np = dz.detach().cpu().numpy()
-    ddz_np = ddz.detach().cpu().numpy()
-
-    # Plot
-    fig, axs = plt.subplots(3, 1, figsize=(6, 12))
-
-    axs[0].plot(z_np[:, 0], z_np[:, 1], 'r-', lw=2, label='Geodesic Spline')
-    axs[0].scatter([a[0].item(), b[0].item()], [a[1].item(), b[1].item()], c='black', label='Endpoints')
-    axs[0].set_title("Spline in Latent Space")
-    axs[0].axis("equal")
-    axs[0].legend()
-
-    axs[1].plot(dz_np[:, 0], label="dx/dt")
-    axs[1].plot(dz_np[:, 1], label="dy/dt")
-    axs[1].set_title("Velocity (First Derivative)")
-    axs[1].legend()
-
-    axs[2].plot(ddz_np[:, 0], label="d²x/dt²")
-    axs[2].plot(ddz_np[:, 1], label="d²y/dt²")
-    axs[2].set_title("Acceleration (Second Derivative)")
-    axs[2].legend()
-    print("Spline start:", z_np[0])
-    print("Spline end:  ", z_np[-1])
-    print("Expected a:  ", a.cpu().numpy())
-    print("Expected b:  ", b.cpu().numpy())
-
-    # Compute and plot knot locations
-    knot_times = torch.linspace(0, 1, n_poly + 1, device=device)[:-1]  # Exclude final t=1 to avoid duplication
-    with torch.no_grad():
-        z_knots = spline(knot_times).cpu().numpy()
-        z_init = spline_init(t).cpu().numpy()
-
-    axs[0].plot(z_init[:, 0], z_init[:, 1], 'k--', lw=1.5, label='Initial Spline')
-    axs[0].scatter(z_knots[:, 0], z_knots[:, 1], c='blue', marker='x', s=60, label='Knots')
-    for i, (x, y) in enumerate(z_knots):
-        axs[0].text(x, y, f'k{i}', fontsize=8, ha='left', va='bottom', color='blue')
+        optimized_batch.append({
+            "a": a.cpu(),
+            "b": b.cpu(),
+            "cluster_pair": (a_label, b_label),
+            "n_poly": n_poly,
+            "basis": basis.cpu(),
+            "omega_init": omega_init.cpu(),
+            "omega_optimized": spline.omega.data.cpu(),
+            "length_euclidean": length_euclidean,
+            "length_geodesic": length_geodesic
+        })
 
 
+    plt.title(f"Optimized Geodesic Splines ({len(spline_batch)} total)")
+    plt.axis("equal")
+    plt.grid(True)
+    # plt.legend()
     plt.tight_layout()
-    plt.savefig("src/plots/spline_smoothness.png", dpi=300)
-    print("Saved plot to src/plots/spline_smoothness.png")
+    plt.savefig(out_plot_path, dpi=300)
+    torch.save(optimized_batch, out_data_path)
+    print(f"Saved optimized splines to {out_data_path}")
+    print(f"Saved plot to {out_plot_path}")
+
