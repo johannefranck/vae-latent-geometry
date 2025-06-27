@@ -1,6 +1,6 @@
 # vae-latent-geometry
 
-## Identifying and Measuring Identifiable Distances of Geodesics at Large Scale
+## Computing Identifiable Distances of Geodesics at Large Scale
 
 Aim of producing geodesics in regard to this project by Syrota et al.: https://github.com/mustass/identifiable-latent-metric-space
 
