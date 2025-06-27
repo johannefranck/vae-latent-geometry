@@ -19,8 +19,16 @@ Call src/single_nbatched.sh
 
 Output visuals src/plots/single_decoder/
 
-![vae12](src/plots/density_with_splines_seed12.png "vae latent space seed 12") ![vae123](src/plots/density_with_splines_seed123.png "vae latent space seed 123")
-![geo-dist12](src/plots/geodesic_distance_seed12.png "vae latent space seed 12") ![geo-dist123](src/plots/geodesic_distance_seed123.png "vae latent space seed 123")
+<table>
+  <tr>
+    <td><img src="src/plots/density_with_splines_seed12.png" alt="vae12" width="400"/></td>
+    <td><img src="src/plots/density_with_splines_seed123.png" alt="vae123" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="src/plots/geodesic_distance_seed12.png" alt="geo-dist12" width="400"/></td>
+    <td><img src="src/plots/geodesic_distance_seed123.png" alt="geo-dist123" width="400"/></td>
+  </tr>
+</table>
 
 The numerical similarity should be more similar.
 
