@@ -1,0 +1,86 @@
+Loaded module: cuda/11.7
+Skipping pair 1073: identical grid points.
+Skipping pair 1180: identical grid points.
+Saved 1225 fitted splines to src/artifacts/spline_batch_seed123.pt
+Step 0
+Step 50
+Step 100
+Step 150
+Step 200
+Step 250
+Step 300
+Step 350
+Step 400
+Step 450
+Saved: src/artifacts/spline_batch_optimized_batched_seed123.pt
+Saved: src/plots/geodesic_distance_batched_seed123.png
+Saved: src/artifacts/geodesic_distances_batched_seed123.json
+Saved: src/plots/density_with_splines_batched_seed123.png
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 25379555: <geodesic_single_batched> in cluster <dcc> Done
+
+Job <geodesic_single_batched> was submitted from host <n-62-12-19> by user <s204088> in cluster <dcc> at Mon Jun 30 13:58:48 2025
+Job was executed on host(s) <n-62-12-24>, in queue <gpua100>, as user <s204088> in cluster <dcc> at Mon Jun 30 14:02:50 2025
+</zhome/b4/8/155613> was used as the home directory.
+</dtu/blackhole/1d/155613/vae-latent-geometry> was used as the working directory.
+Started at Mon Jun 30 14:02:50 2025
+Terminated at Mon Jun 30 14:06:46 2025
+Results reported at Mon Jun 30 14:06:46 2025
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -J geodesic_single_batched      # Job name
+#BSUB -q gpua100                      # GPU queue
+#BSUB -W 00:12                        # Max runtime (hh:mm)
+#BSUB -n 1                            # 1 core
+#BSUB -B s204088@dtu.dk               # Send email at start
+#BSUB -N s204088@dtu.dk               # Send email at end of job
+#BSUB -R "rusage[mem=20000]"          # 20GB memory
+#BSUB -R "span[hosts=1]"              # All cores on same host
+#BSUB -o single_batched.out           # OUT
+#BSUB -e single_batched.err           # ERR
+
+# Load modules
+module load cuda/11.7
+
+# Go to your project directory
+cd /dtu/blackhole/1d/155613/vae-latent-geometry || exit 1
+
+# Activate virtual environment
+source /dtu/blackhole/1d/155613/venv_geometry/bin/activate
+
+# Set HOME and prepare cache/config folders
+export HOME=$PWD
+mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
+
+export PYTHONPATH=$PWD:$PYTHONPATH
+
+# Run single decoder pipeline (batched)
+python -m src.single_decoder.init_spline --seed 123 --pairfile selected_pairs_50.json
+python -m src.single_decoder.optimize_energy_batched --seed 123 
+python -m src.single_decoder.density_batched --seed 123 --pairs_path src/artifacts/selected_pairs_50.json
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   230.64 sec.
+    Max Memory :                                 769 MB
+    Average Memory :                             738.00 MB
+    Total Requested Memory :                     1024.00 MB
+    Delta Memory :                               255.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                8
+    Run time :                                   236 sec.
+    Turnaround time :                            478 sec.
+
+The output (if any) is above this job summary.
+

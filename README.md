@@ -1,10 +1,10 @@
 # vae-latent-geometry
 
-## Computing Identifiable Distances of Geodesics at Large Scale
+## Computing Identifiable Distances at a Large Scale
 
 Aim of producing geodesics in regard to this project by Syrota et al.: https://github.com/mustass/identifiable-latent-metric-space
 
-**Aim**: Implementing algorithms at large scale
+**Aim**: Implementing algorithms at large scale for approximating distances between points. 
 
 **Data**: Obtained from here (pre-processed): https://github.com/berenslab/rna-seq-tsne/tree/master/data/tasic-preprocessed
 
@@ -12,12 +12,13 @@ Aim of producing geodesics in regard to this project by Syrota et al.: https://g
 
 Geodesics: Single decoder (initial pipeline):
 * dir src/single_decoder/ (batched!? not yet)
-    * init_spline.py => spline_batch_seedX.pt (CHANGE TO TAKE ONLY SEED! model params are the same)
+    * init_spline.py => spline_batch_seedX.pt
     * optimize_energy.py => spline_batch_optimized_seedX.pt 
     * density.py => geodesic_distances_seedX.json
+
 Call src/single_nbatched.sh
 
-Output visuals src/plots/single_decoder/
+Output visuals src/plots/single_decoder/. Examples below:
 
 <table>
   <tr>
@@ -30,7 +31,7 @@ Output visuals src/plots/single_decoder/
   </tr>
 </table>
 
-The numerical similarity should be more similar.
+The numerical similarity should be more similar... Therefore, we do geodesic ensemble approximations further.
 
 Geodesics: Ensemble (structure):
 * dir src/ (should be batched!)

@@ -5,12 +5,13 @@ import torch
 import argparse
 import re
 import matplotlib.pyplot as plt
+from pathlib import Path
 from scipy.spatial import KDTree
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import dijkstra
 
 from src.select_representative_pairs import load_pairs
-from src.optimize_energy import GeodesicSpline, construct_nullspace_basis
+from src.single_decoder.optimize_energy import GeodesicSpline, construct_nullspace_basis
 
 def set_seed(seed=12):
     torch.manual_seed(seed)
@@ -69,7 +70,8 @@ def extract_seed_from_path(path):
     return match.group(1) if match else "unknown"
 
 def main(seed):
-    pairs_path = "src/artifacts/selected_pairs.json"
+    pairs_path = f"src/artifacts/{args.pairfile}"
+    pair_name = Path(args.pairfile).stem.replace("selected_pairs_", "")  # e.g. "50"
     os.makedirs("src/plots", exist_ok=True)
 
     n_poly = 4
@@ -155,12 +157,13 @@ def main(seed):
         "spline_data": spline_data,
         "representatives": representatives,
         "pairs": pairs
-    }, f"src/artifacts/spline_batch_seed{seed}.pt")
+    }, f"src/artifacts/spline_batch_seed{seed}_p{pair_name}.pt")
 
     print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch_seed{seed}.pt")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=str, required=True, help="Path to latent .npy file")
+    parser.add_argument("--pairfile", type=str, required=True, help="Name of selected_pairs_*.json")
     args = parser.parse_args()
     main(args.seed)

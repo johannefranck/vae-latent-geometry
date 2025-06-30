@@ -47,5 +47,5 @@ if __name__ == "__main__":
     latents = np.load(latent_path)
     labels = np.load(label_path)
 
-    reps = select_representatives(latents, labels, max_labels=10)
-    save_pairs(reps, path="src/artifacts/selected_pairs.json")
+    reps = select_representatives(latents, labels, max_labels=50)
+    save_pairs(reps, path="src/artifacts/selected_pairs_50.json")
