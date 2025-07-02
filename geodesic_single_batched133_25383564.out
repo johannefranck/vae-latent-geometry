@@ -1,0 +1,99 @@
+Loaded module: cuda/11.7
+Traceback (most recent call last):
+  File "/appl9/python/3.10.16/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/appl9/python/3.10.16/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/dtu/blackhole/1d/155613/vae-latent-geometry/src/single_decoder/optimize_energy_batched.py", line 126, in <module>
+    main(args.seed, args.pairfile)
+  File "/dtu/blackhole/1d/155613/vae-latent-geometry/src/single_decoder/optimize_energy_batched.py", line 98, in main
+    loss.sum().backward()
+  File "/dtu/blackhole/1d/155613/venv_geometry/lib/python3.10/site-packages/torch/_tensor.py", line 492, in backward
+    torch.autograd.backward(
+  File "/dtu/blackhole/1d/155613/venv_geometry/lib/python3.10/site-packages/torch/autograd/__init__.py", line 251, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 8.37 GiB. GPU 0 has a total capacty of 39.49 GiB of which 5.17 GiB is free. Including non-PyTorch memory, this process has 34.32 GiB memory in use. Of the allocated memory 25.31 GiB is allocated by PyTorch, and 8.34 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+Step 0
+Traceback (most recent call last):
+  File "/appl9/python/3.10.16/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/appl9/python/3.10.16/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/dtu/blackhole/1d/155613/vae-latent-geometry/src/single_decoder/density_batched.py", line 47, in <module>
+    batch_data = torch.load(spline_path, map_location=device)
+  File "/dtu/blackhole/1d/155613/venv_geometry/lib/python3.10/site-packages/torch/serialization.py", line 986, in load
+    with _open_file_like(f, 'rb') as opened_file:
+  File "/dtu/blackhole/1d/155613/venv_geometry/lib/python3.10/site-packages/torch/serialization.py", line 435, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/dtu/blackhole/1d/155613/venv_geometry/lib/python3.10/site-packages/torch/serialization.py", line 416, in __init__
+    super().__init__(open(name, mode))
+FileNotFoundError: [Errno 2] No such file or directory: 'src/artifacts/spline_batch_optimized_batched_seed123_p133.pt'
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 25383564: <geodesic_single_batched133> in cluster <dcc> Exited
+
+Job <geodesic_single_batched133> was submitted from host <n-62-12-19> by user <s204088> in cluster <dcc> at Tue Jul  1 11:33:03 2025
+Job was executed on host(s) <n-62-12-21>, in queue <gpua100>, as user <s204088> in cluster <dcc> at Tue Jul  1 12:17:18 2025
+</zhome/b4/8/155613> was used as the home directory.
+</dtu/blackhole/1d/155613/vae-latent-geometry> was used as the working directory.
+Started at Tue Jul  1 12:17:18 2025
+Terminated at Tue Jul  1 12:17:34 2025
+Results reported at Tue Jul  1 12:17:34 2025
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -J geodesic_single_batched133
+#BSUB -q gpua100
+#BSUB -W 01:00
+#BSUB -n 1
+#BSUB -R "rusage[mem=40000]"
+#BSUB -M 40000
+#BSUB -R "span[hosts=1]"
+#BSUB -B s204088@dtu.dk
+#BSUB -N s204088@dtu.dk
+#BSUB -o single100_batched.out
+#BSUB -e single100_batched.err
+
+# Load modules
+module load cuda/11.7
+
+# Go to project directory
+cd /dtu/blackhole/1d/155613/vae-latent-geometry || exit 1
+
+# Activate virtual environment
+source /dtu/blackhole/1d/155613/venv_geometry/bin/activate
+
+# Set HOME and prepare cache/config folders
+export HOME=$PWD
+mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
+
+export PYTHONPATH=$PWD:$PYTHONPATH
+
+# Run single decoder pipeline (batched)
+python -m src.single_decoder.init_spline --seed 123 --pairfile selected_pairs_133.json
+python -m src.single_decoder.optimize_energy_batched --seed 123 --pairfile selected_pairs_133.json
+python -m src.single_decoder.density_batched --seed 123 --pairs_path src/artifacts/selected_pairs_133.json
+
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   12.84 sec.
+    Max Memory :                                 227 MB
+    Average Memory :                             227.00 MB
+    Total Requested Memory :                     40000.00 MB
+    Delta Memory :                               39773.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                5
+    Run time :                                   16 sec.
+    Turnaround time :                            2671 sec.
+
+The output (if any) is above this job summary.
+

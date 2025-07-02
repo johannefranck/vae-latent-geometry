@@ -59,14 +59,16 @@ def compute_energy(spline, decoder, t_vals):
     energy = (diffs ** 2).sum(dim=2).sum(dim=0)
     return energy
 
-def main(seed):
+def main(seed, pairfile):
+    pair_tag = Path(pairfile).stem.replace("selected_pairs_", "")  # e.g. "133"
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_default_dtype(torch.float32)
     set_seed(seed)
 
-    spline_path = f"src/artifacts/spline_batch_seed{seed}.pt"
+    spline_path = f"src/artifacts/spline_batch_seed{seed}_p{pair_tag}.pt"
     decoder_path = f"src/artifacts/vae_best_seed{seed}.pth"
-    output_path = f"src/artifacts/spline_batch_optimized_batched_seed{seed}.pt"
+    output_path = f"src/artifacts/spline_batch_optimized_batched_seed{seed}_p{pair_tag}.pt"
 
     vae = VAE(input_dim=50, latent_dim=2).to(device)
     vae.load_state_dict(torch.load(decoder_path, map_location=device))
@@ -115,9 +117,10 @@ def main(seed):
 
     torch.save(output, output_path)
     print(f"Saved: {output_path}")
-
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, required=True)
+    parser.add_argument("--pairfile", type=str, required=True, help="selected_pairs_*.json")
     args = parser.parse_args()
-    main(args.seed)
+    main(args.seed, args.pairfile)

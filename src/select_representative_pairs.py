@@ -6,6 +6,8 @@ from itertools import combinations
 def select_representatives(latents, labels, max_labels=133):
     unique_labels = np.unique(labels)
     selected_labels = unique_labels[:max_labels]
+    if len(selected_labels) < max_labels:
+        print(f"Warning: Only {len(selected_labels)} unique labels found, expected {max_labels}.")
 
     representatives = []
     for lbl in selected_labels:
@@ -47,5 +49,5 @@ if __name__ == "__main__":
     latents = np.load(latent_path)
     labels = np.load(label_path)
 
-    reps = select_representatives(latents, labels, max_labels=50)
-    save_pairs(reps, path="src/artifacts/selected_pairs_50.json")
+    reps = select_representatives(latents, labels, max_labels=100)
+    save_pairs(reps, path="src/artifacts/selected_pairs_100.json")

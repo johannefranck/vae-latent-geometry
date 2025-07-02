@@ -27,10 +27,11 @@ PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
 latents_path = ARTIFACT_DIR / f"latents_VAE_ld2_ep100_bs64_lr1e-03_seed{seed}.npy"
 decoder_path = ARTIFACT_DIR / f"vae_best_seed{seed}.pth"
-spline_path = ARTIFACT_DIR / f"spline_batch_optimized_batched_seed{seed}.pt"
+spline_path = ARTIFACT_DIR / f"spline_batch_optimized_batched_seed{seed}_p{pair_tag}.pt"
 plot_path_density = PLOT_DIR / f"density_with_splines_seed{seed}_p{pair_tag}.png"
 plot_path_matrix = PLOT_DIR / f"geodesic_distance_seed{seed}_p{pair_tag}.png"
 json_path = ARTIFACT_DIR / f"geodesic_distances_seed{seed}_p{pair_tag}.json"
+
 
 # ---- LOAD LATENTS + LABELS ----
 latents = np.load(latents_path)
@@ -44,6 +45,8 @@ decoder = vae.decoder
 
 # ---- LOAD SPLINE BATCH ----
 batch_data = torch.load(spline_path, map_location=device)
+print(f"Loaded {len(batch_data)} optimized splines from: {spline_path}")
+
 spline_pairs = []
 point_set = []
 index_map = {}
@@ -107,7 +110,7 @@ for entry in batch_data:
 
 # ---- PLOT GEODESIC DISTANCE MATRIX ----
 np.fill_diagonal(distance_matrix, 0.0)
-
+print(f"Distance matrix shape: {distance_matrix.shape}")
 plt.figure(figsize=(12, 12))
 sns.heatmap(
     distance_matrix,
@@ -119,8 +122,8 @@ sns.heatmap(
     yticklabels=cluster_ids,
     cbar_kws={"label": "Geodesic Distance"},
 )
-plt.xticks(rotation=90, fontsize=6)
-plt.yticks(rotation=0, fontsize=6)
+plt.xticks(rotation=90, fontsize=3)
+plt.yticks(rotation=0, fontsize=3)
 plt.title(f"Geodesic Distance Matrix (batched, seed {seed})")
 plt.xlabel("Cluster ID")
 plt.ylabel("Cluster ID")

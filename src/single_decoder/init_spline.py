@@ -22,10 +22,10 @@ def set_seed(seed=12):
 set_seed(12)
 
 def create_latent_grid_from_data(latents, n_points_per_axis=150, margin=0.1):
-    latents = torch.tensor(latents) if not isinstance(latents, torch.Tensor) else latents
+    if not isinstance(latents, torch.Tensor):
+        latents = torch.tensor(latents)
     z_min = latents.min(dim=0).values
     z_max = latents.max(dim=0).values
-
     z_range = z_max - z_min
     z_min -= margin * z_range
     z_max += margin * z_range
@@ -36,23 +36,19 @@ def create_latent_grid_from_data(latents, n_points_per_axis=150, margin=0.1):
         indexing='ij'
     )
     grid = torch.stack([grid_x, grid_y], dim=-1)
-    flat_grid = grid.view(-1, 2)
-    return flat_grid, (n_points_per_axis, n_points_per_axis)
+    return grid.view(-1, 2), (n_points_per_axis, n_points_per_axis)
 
 def build_grid_graph(grid, k=8):
-    if isinstance(grid, torch.Tensor):
-        grid = grid.cpu().numpy()
-
-    tree = KDTree(grid)
-    n_nodes = len(grid)
+    grid_np = grid.cpu().numpy() if isinstance(grid, torch.Tensor) else grid
+    tree = KDTree(grid_np)
+    n_nodes = len(grid_np)
     graph = lil_matrix((n_nodes, n_nodes))
 
     for i in range(n_nodes):
-        distances, indices = tree.query(grid[i], k=k + 1)
-        for j, dist in zip(indices[1:], distances[1:]):
-            graph[i, j] = dist
-            graph[j, i] = dist
-    return graph, tree
+        dists, indices = tree.query(grid_np[i], k=k + 1)
+        graph.rows[i] = list(indices[1:])
+        graph.data[i] = list(dists[1:])
+    return graph.tocsr(), tree
 
 def reconstruct_path(predecessors, start, end):
     path = []
@@ -69,13 +65,14 @@ def extract_seed_from_path(path):
     match = re.search(r"seed(\d+)", str(path))
     return match.group(1) if match else "unknown"
 
-def main(seed):
-    pairs_path = f"src/artifacts/{args.pairfile}"
-    pair_name = Path(args.pairfile).stem.replace("selected_pairs_", "")  # e.g. "50"
+def main(seed, pairfile):
+    pairs_path = f"src/artifacts/{pairfile}"
+    pair_name = Path(pairfile).stem.replace("selected_pairs_", "")
     os.makedirs("src/plots", exist_ok=True)
 
     n_poly = 4
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
     latents = np.load(f"src/artifacts/latents_VAE_ld2_ep100_bs64_lr1e-03_seed{seed}.npy")
     representatives, pairs = load_pairs(pairs_path)
@@ -84,10 +81,12 @@ def main(seed):
     graph, tree = build_grid_graph(grid, k=8)
     basis, _ = construct_nullspace_basis(n_poly=n_poly, device=device)
 
-    plt.figure(figsize=(8, 8))
-    plt.scatter(latents[:, 0], latents[:, 1], c='lightgray', s=10, label='Latents')
+    # plt.figure(figsize=(8, 8))
+    # plt.scatter(latents[:, 0], latents[:, 1], c='lightgray', s=10, label='Latents')
 
     spline_data = []
+    skipped_same = 0
+    skipped_path = 0
 
     for i, (idx_a, idx_b) in enumerate(pairs):
         z_start = latents[idx_a]
@@ -97,20 +96,21 @@ def main(seed):
         end_idx = tree.query(z_end)[1]
 
         if start_idx == end_idx:
-            print(f"Skipping pair {i}: identical grid points.")
+            skipped_same += 1
             continue
 
-        dist_matrix, predecessors = dijkstra(graph, directed=False, indices=[start_idx], return_predecessors=True)
+        _, predecessors = dijkstra(graph, directed=False, indices=[start_idx], return_predecessors=True)
         path_indices = reconstruct_path(predecessors[0], start_idx, end_idx)
         if not path_indices:
-            print(f"Path {i} failed.")
+            skipped_path += 1
             continue
 
+        if skipped_path > 0 or skipped_same > 0:
+            print(f"Skipped {skipped_same} due to identical grid points")
+            print(f"Skipped {skipped_path} due to Dijkstra path failure")
+
         path_coords = grid[path_indices]
-        if not isinstance(path_coords, torch.Tensor):
-            target = torch.tensor(path_coords, dtype=torch.float32, device=device)
-        else:
-            target = path_coords.clone().detach().to(dtype=torch.float32, device=device)
+        target = torch.tensor(path_coords, dtype=torch.float32, device=device)
 
         a, b = target[0], target[-1]
         spline = GeodesicSpline((a, b), basis, n_poly=n_poly).to(device)
@@ -130,8 +130,8 @@ def main(seed):
         t = torch.linspace(0, 1, 1000, device=device)
         z = spline(t).detach().cpu().numpy()
 
-        plt.plot(path_coords[:, 0], path_coords[:, 1], 'k--', alpha=0.6, linewidth=1.5, label='Dijkstra' if i == 0 else None)
-        plt.plot(z[:, 0], z[:, 1], '-', alpha=1.0, linewidth=2, label='Fitted Spline' if i == 0 else None)
+        # plt.plot(path_coords[:, 0], path_coords[:, 1], 'k--', alpha=0.6, linewidth=1.5, label='Dijkstra' if i == 0 else None)
+        # plt.plot(z[:, 0], z[:, 1], '-', alpha=1.0, linewidth=2, label='Fitted Spline' if i == 0 else None)
 
         spline_data.append({
             "a": a.detach().cpu(),
@@ -145,13 +145,13 @@ def main(seed):
             "omega_init": spline.omega.detach().cpu()
         })
 
-    plt.title("Latents with Dijkstra Paths and Fitted Splines")
-    plt.axis("equal")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(f"src/plots/splines_init_dijkstra_seed{seed}.png", dpi=300)
-    plt.close()
+    # plt.title("Latents with Dijkstra Paths and Fitted Splines")
+    # plt.axis("equal")
+    # plt.grid(True)
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.savefig(f"src/plots/splines_init_dijkstra_seed{seed}.png", dpi=300)
+    # plt.close()
 
     torch.save({
         "spline_data": spline_data,
@@ -159,11 +159,4 @@ def main(seed):
         "pairs": pairs
     }, f"src/artifacts/spline_batch_seed{seed}_p{pair_name}.pt")
 
-    print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch_seed{seed}.pt")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=str, required=True, help="Path to latent .npy file")
-    parser.add_argument("--pairfile", type=str, required=True, help="Name of selected_pairs_*.json")
-    args = parser.parse_args()
-    main(args.seed)
+    print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch_seed{seed}_p{pair_name}.pt")
