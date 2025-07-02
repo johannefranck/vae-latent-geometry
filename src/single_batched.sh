@@ -8,8 +8,8 @@
 #BSUB -R "span[hosts=1]"
 #BSUB -B s204088@dtu.dk
 #BSUB -N s204088@dtu.dk
-#BSUB -o single100_batched.out
-#BSUB -e single100_batched.err
+#BSUB -o init_spline_%J.out
+#BSUB -e init_spline_%J.err
 
 # Load modules
 module load cuda/11.7
@@ -27,6 +27,6 @@ mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 # Run single decoder pipeline (batched)
-python -m src.single_decoder.init_spline --seed 123 --pairfile selected_pairs_133.json
-python -m src.single_decoder.optimize_energy_batched --seed 123 --pairfile selected_pairs_133.json
-python -m src.single_decoder.density_batched --seed 123 --pairs_path src/artifacts/selected_pairs_133.json
+python -m src.single_decoder.init_spline --seed 12 --pairfile selected_pairs_133.json
+python -m src.single_decoder.optimize_energy_batched --seed 12 --pairfile selected_pairs_133.json
+python -m src.single_decoder.density_batched --seed 12 --pairs_path src/artifacts/selected_pairs_133.json

@@ -16,7 +16,7 @@ Geodesics: Single decoder (initial pipeline):
     * optimize_energy.py => spline_batch_optimized_seedX.pt 
     * density.py => geodesic_distances_seedX.json
 
-Call src/single_nbatched.sh
+Call src/single_batched.sh
 
 Output visuals src/plots/single_decoder/. Examples below:
 

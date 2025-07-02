@@ -19,8 +19,6 @@ def set_seed(seed=12):
     torch.use_deterministic_algorithms(True)
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
-set_seed(12)
-
 def create_latent_grid_from_data(latents, n_points_per_axis=150, margin=0.1):
     if not isinstance(latents, torch.Tensor):
         latents = torch.tensor(latents)
@@ -66,6 +64,7 @@ def extract_seed_from_path(path):
     return match.group(1) if match else "unknown"
 
 def main(seed, pairfile):
+    set_seed(12)
     pairs_path = f"src/artifacts/{pairfile}"
     pair_name = Path(pairfile).stem.replace("selected_pairs_", "")
     os.makedirs("src/plots", exist_ok=True)
@@ -77,7 +76,7 @@ def main(seed, pairfile):
     latents = np.load(f"src/artifacts/latents_VAE_ld2_ep100_bs64_lr1e-03_seed{seed}.npy")
     representatives, pairs = load_pairs(pairs_path)
 
-    grid, _ = create_latent_grid_from_data(latents, n_points_per_axis=150)
+    grid, _ = create_latent_grid_from_data(latents, n_points_per_axis=200)
     graph, tree = build_grid_graph(grid, k=8)
     basis, _ = construct_nullspace_basis(n_poly=n_poly, device=device)
 
@@ -127,8 +126,8 @@ def main(seed, pairfile):
 
         optimizer.step(closure)
 
-        t = torch.linspace(0, 1, 1000, device=device)
-        z = spline(t).detach().cpu().numpy()
+        # t = torch.linspace(0, 1, 1000, device=device)
+        # z = spline(t).detach().cpu().numpy()
 
         # plt.plot(path_coords[:, 0], path_coords[:, 1], 'k--', alpha=0.6, linewidth=1.5, label='Dijkstra' if i == 0 else None)
         # plt.plot(z[:, 0], z[:, 1], '-', alpha=1.0, linewidth=2, label='Fitted Spline' if i == 0 else None)
@@ -153,10 +152,15 @@ def main(seed, pairfile):
     # plt.savefig(f"src/plots/splines_init_dijkstra_seed{seed}.png", dpi=300)
     # plt.close()
 
+    print(f"Saving {len(spline_data)} fitted splines out of {len(pairs)} total pairs")
+    if len(spline_data) == 0:
+        print("[ERROR] No splines were fitted! Exiting without saving.")
+        return
+
+    output_file = f"src/artifacts/spline_batch_seed{seed}_p{pair_name}.pt"
     torch.save({
         "spline_data": spline_data,
         "representatives": representatives,
         "pairs": pairs
-    }, f"src/artifacts/spline_batch_seed{seed}_p{pair_name}.pt")
-
-    print(f"Saved {len(pairs)} fitted splines to src/artifacts/spline_batch_seed{seed}_p{pair_name}.pt")
+    }, output_file)
+    print(f"Saved to: {output_file}")

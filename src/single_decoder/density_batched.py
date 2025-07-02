@@ -120,11 +120,12 @@ sns.heatmap(
     # fmt=".1f",
     xticklabels=cluster_ids,
     yticklabels=cluster_ids,
-    cbar_kws={"label": "Geodesic Distance"},
+    cbar=False,
+    # cbar_kws={"label": "Geodesic Distance"},
 )
 plt.xticks(rotation=90, fontsize=3)
 plt.yticks(rotation=0, fontsize=3)
-plt.title(f"Geodesic Distance Matrix (batched, seed {seed})")
+plt.title(f"Geodesic Distance Matrix Single Decoder (seed {seed})")
 plt.xlabel("Cluster ID")
 plt.ylabel("Cluster ID")
 plt.tight_layout()
