@@ -109,7 +109,10 @@ def main(seed, pairfile):
             print(f"Skipped {skipped_path} due to Dijkstra path failure")
 
         path_coords = grid[path_indices]
-        target = torch.tensor(path_coords, dtype=torch.float32, device=device)
+        if not isinstance(path_coords, torch.Tensor):
+            target = torch.tensor(path_coords, dtype=torch.float32, device=device)
+        else:
+            target = path_coords.clone().detach().to(dtype=torch.float32, device=device)
 
         a, b = target[0], target[-1]
         spline = GeodesicSpline((a, b), basis, n_poly=n_poly).to(device)
@@ -164,3 +167,11 @@ def main(seed, pairfile):
         "pairs": pairs
     }, output_file)
     print(f"Saved to: {output_file}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, required=True)
+    parser.add_argument("--pairfile", type=str, required=True, help="selected_pairs_*.json")
+    args = parser.parse_args()
+    main(args.seed, args.pairfile)
