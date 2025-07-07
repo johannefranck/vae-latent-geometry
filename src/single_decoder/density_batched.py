@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-from src.vae_good import VAE
+from src.vae import VAE
 from src.select_representative_pairs import load_pairs
 from src.single_decoder.optimize_energy import GeodesicSpline
 from src.plotting import plot_latent_density_with_splines

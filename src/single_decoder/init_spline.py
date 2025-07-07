@@ -104,9 +104,9 @@ def main(seed, pairfile):
             skipped_path += 1
             continue
 
-        if skipped_path > 0 or skipped_same > 0:
-            print(f"Skipped {skipped_same} due to identical grid points")
-            print(f"Skipped {skipped_path} due to Dijkstra path failure")
+        # if skipped_path > 0 or skipped_same > 0:
+        #     print(f"Skipped {skipped_same} due to identical grid points")
+        #     print(f"Skipped {skipped_path} due to Dijkstra path failure")
 
         path_coords = grid[path_indices]
         if not isinstance(path_coords, torch.Tensor):

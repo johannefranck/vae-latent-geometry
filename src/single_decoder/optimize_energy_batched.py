@@ -4,7 +4,7 @@ import torch.optim as optim
 import argparse
 import json
 from pathlib import Path
-from src.vae_good import VAE
+from src.vae import VAE
 from src.single_decoder.optimize_energy import construct_nullspace_basis
 
 def set_seed(seed=12):

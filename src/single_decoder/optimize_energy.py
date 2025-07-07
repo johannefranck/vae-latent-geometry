@@ -6,7 +6,7 @@ import numpy as np
 import pickle
 import argparse
 from pathlib import Path
-from src.vae_good import VAE
+from src.vae import VAE
 
 import random
 import os
