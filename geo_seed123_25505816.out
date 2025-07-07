@@ -1,1 +1,32 @@
 Loaded module: cuda/11.7
+Using device: cuda
+Saving 8775 fitted splines out of 8778 total pairs
+Saved to: src/artifacts/spline_batch_seed123_p133.pt
+Optimizing splines 0 to 4999
+Step 0
+Step 50
+Step 100
+Step 150
+Step 200
+Step 250
+Step 300
+Step 350
+Step 400
+Step 450
+Optimizing splines 5000 to 8774
+Step 0
+Step 50
+Step 100
+Step 150
+Step 200
+Step 250
+Step 300
+Step 350
+Step 400
+Step 450
+Saved: src/artifacts/spline_batch_optimized_batched_seed123_p133.pt
+Loaded 8775 optimized splines from: src/artifacts/spline_batch_optimized_batched_seed123_p133.pt
+Distance matrix shape: (130, 130)
+Saved: src/plots/geodesic_distance_seed123_p133.png
+Saved: src/artifacts/geodesic_distances_seed123_p133.json
+Saved: src/plots/density_with_splines_seed123_p133.png
