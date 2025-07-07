@@ -13,7 +13,6 @@ from src.select_representative_pairs import load_pairs
 from src.vae import VAE, EVAE
 from src.single_decoder.optimize_energy import GeodesicSpline, construct_nullspace_basis
 
-
 def set_seed(seed):
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -21,38 +20,27 @@ def set_seed(seed):
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
 def compute_entropy(outputs, eps=1e-8):
-    std = outputs.std(dim=0)  # (N, F)
+    std = outputs.std(dim=0)
     std = torch.clamp(std, min=eps)
-
-    # Proxy for uncertainty
-    entropy_proxy = std.mean(dim=1)  # (N,)
-
-    # Normalize to [0, 1]
+    entropy_proxy = std.mean(dim=1)
     entropy_proxy -= entropy_proxy.min()
     entropy_proxy /= entropy_proxy.max() + eps
-
-    return entropy_proxy  # (N,)
-
+    return entropy_proxy
 
 def build_entropy_weighted_graph(grid, decoders, k=6):
     with torch.no_grad():
-        outputs = [decoder(grid).mean for decoder in decoders]  # list of (N, F)
-        outputs = torch.stack(outputs)  # shape: (D, N, F)
-        entropy = compute_entropy(outputs)  # shape: (N,)
-
+        outputs = [decoder(grid).mean for decoder in decoders]
+        outputs = torch.stack(outputs)
+        entropy = compute_entropy(outputs)
     tree = KDTree(grid.cpu().numpy())
     n = grid.size(0)
     graph = lil_matrix((n, n))
-
     for i in range(n):
         dists, idxs = tree.query(grid[i].cpu().numpy(), k=k + 1)
         for j, dist in zip(idxs[1:], dists[1:]):
             weight = dist * (entropy[i].item() + entropy[j].item()) / 2
             graph[i, j] = graph[j, i] = weight
-
     return graph.tocsr(), tree
-
-
 
 def create_latent_grid(latents, n=200, margin=0.1):
     z_min = latents.min(axis=0)
@@ -66,32 +54,32 @@ def create_latent_grid(latents, n=200, margin=0.1):
     grid = np.stack([mesh_x, mesh_y], axis=-1).reshape(-1, 2)
     return torch.tensor(grid, dtype=torch.float32), (n, n)
 
-
-def extract_seed_from_path(path):
-    match = re.search(r"seed(\d+)", str(path))
-    return match.group(1) if match else "unknown"
-
-
 def main(seed, pairfile, num_decoders):
     set_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # ----- Load data -----
+    data = np.load("data/tasic-pca50.npy")  # (N, 50)
+    data_tensor = torch.tensor(data, dtype=torch.float32).to(device)
+
+    # ----- Init model -----
     if num_decoders == 1:
         suffix = f"VAE_ld2_d1_ep100_bs64_lr1e-03_seed{seed}"
         model = VAE(input_dim=50, latent_dim=2).to(device)
-        decoders = [model.decoder]  # wrap single decoder in a list for consistency
+        decoders = [model.decoder]
     else:
         suffix = f"EVAE_ld2_d{num_decoders}_ep100_bs64_lr1e-03_seed{seed}"
         model = EVAE(input_dim=50, latent_dim=2, num_decoders=num_decoders).to(device)
         decoders = model.decoders
 
-    latents = np.load(f"src/artifacts/latents_{suffix}.npy")
-    latents = torch.tensor(latents, dtype=torch.float32)
-
     model.load_state_dict(torch.load(f"src/artifacts/{suffix}_best.pth", map_location=device))
     model.eval()
 
-    grid, _ = create_latent_grid(latents.numpy(), n=100)
+    # ----- Compute latents dynamically -----
+    with torch.no_grad():
+        latents = model.encoder(data_tensor).mean  # (N, 2)
+
+    grid, _ = create_latent_grid(latents.cpu().numpy(), n=100)
     grid = grid.to(device)
     graph, tree = build_entropy_weighted_graph(grid, decoders, k=8)
     basis, _ = construct_nullspace_basis(n_poly=4, device=device)
@@ -102,10 +90,11 @@ def main(seed, pairfile, num_decoders):
 
     spline_data = []
     for idx_a, idx_b in tqdm(pairs, desc="Fitting splines"):
-        z_a, z_b = latents[idx_a], latents[idx_b]
-        start_idx = tree.query(z_a.numpy())[1]
-        end_idx = tree.query(z_b.numpy())[1]
+        z_a = latents[idx_a]
+        z_b = latents[idx_b]
 
+        start_idx = tree.query(z_a.cpu().numpy())[1]
+        end_idx = tree.query(z_b.cpu().numpy())[1]
         if start_idx == end_idx:
             continue
 
@@ -119,7 +108,6 @@ def main(seed, pairfile, num_decoders):
             path_idx.append(node)
             node = pred[0][node]
         path_idx = [start_idx] + path_idx[::-1]
-
         if not path_idx:
             continue
 
@@ -155,7 +143,6 @@ def main(seed, pairfile, num_decoders):
     out_path = f"src/artifacts/spline_ensemble_seed{seed}_p{pair_tag}_d{num_decoders}.pt"
     torch.save({"spline_data": spline_data, "pairs": pairs, "representatives": representatives}, out_path)
     print(f"[INFO] Saved: {out_path} | Total: {len(spline_data)} splines")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
