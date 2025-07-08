@@ -30,7 +30,7 @@ def optimize_all(seed, pairfile, num_decoders, reruns, batch_size=500):
 
     for rerun in reruns:
         # Load model
-        suffix = f"EVAE_ld2_dec{num_decoders}_ep100_bs64_lr0.001_encseed{seed}_rerun{rerun}"
+        suffix = f"EVAE_ld2_dec{num_decoders}_ep200_bs64_lr0.001_encseed{seed}_rerun{rerun}"
         model = EVAE(input_dim=50, latent_dim=2, num_decoders=num_decoders).to(device)
         model_path = f"src/artifacts/{suffix}_best.pth"
         model.load_state_dict(torch.load(model_path, map_location=device))
@@ -64,7 +64,7 @@ def optimize_all(seed, pairfile, num_decoders, reruns, batch_size=500):
                 model_spline = GeodesicSplineBatch(a_batch, b_batch, basis, omega_batch, n_poly).to(device)
                 optimizer = optim.Adam([model_spline.omega], lr=1e-3)
 
-                for step in range(500):
+                for step in range(1000):
                     optimizer.zero_grad()
                     energy = compute_energy_single(model_spline, decoder, t_vals)
                     endpoint_error = (model_spline(t_vals[-1:]) - b_batch[None]) ** 2

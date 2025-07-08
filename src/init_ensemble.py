@@ -66,7 +66,7 @@ def main(encoder_seed, rerun, pairfile, num_decoders):
     data = np.load("data/tasic-pca50.npy")
     data_tensor = torch.tensor(data, dtype=torch.float32).to(device)
 
-    suffix = f"EVAE_ld2_dec{num_decoders}_ep100_bs64_lr0.001_encseed{encoder_seed}_rerun{rerun}"
+    suffix = f"EVAE_ld2_dec{num_decoders}_ep200_bs64_lr0.001_encseed{encoder_seed}_rerun{rerun}"
     model_path = f"src/artifacts/{suffix}_best.pth"
 
     model = EVAE(input_dim=50, latent_dim=2, num_decoders=num_decoders).to(device)

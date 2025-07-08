@@ -1,14 +1,14 @@
 #!/bin/bash
-#BSUB -J optimize
+#BSUB -J init
 #BSUB -q gpua100
 #BSUB -W 01:00
 #BSUB -n 1
-#BSUB -R "rusage[mem=40000]"
-#BSUB -M 40000
+#BSUB -R "rusage[mem=6000]"
+#BSUB -M 6000
 #BSUB -R "span[hosts=1]"
 #BSUB -N s204088@dtu.dk
-#BSUB -o init_spline_%J.out
-#BSUB -e init_spline_%J.err
+#BSUB -o logs/optimize_%J_%I.out
+#BSUB -e logs/optimize_%J_%I.err
 
 # Load modules
 module load cuda/11.7
@@ -25,9 +25,41 @@ mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
 
 export PYTHONPATH=$PWD:$PYTHONPATH
 
-# Run single decoder pipeline (batched)
-python -m src.optimize_ensemble --seed 123 --pairfile selected_pairs_50.json --num_decoders 2
-python -m src.optimize_ensemble --seed 123 --pairfile selected_pairs_50.json --num_decoders 3
-python -m src.optimize_ensemble --seed 12 --pairfile selected_pairs_50.json --num_decoders 1
-python -m src.optimize_ensemble --seed 12 --pairfile selected_pairs_50.json --num_decoders 2
-python -m src.optimize_ensemble --seed 12 --pairfile selected_pairs_50.json --num_decoders 3
+# run init, optimize, cov
+python -m src.init_ensemble \
+    --encoder_seed 12 \
+    --rerun 0 \
+    --pairfile selected_pairs_10.json \
+    --num_decoders 3
+python -m src.init_ensemble \
+    --encoder_seed 12 \
+    --rerun 1 \
+    --pairfile selected_pairs_10.json \
+    --num_decoders 3
+python -m src.init_ensemble \
+    --encoder_seed 12 \
+    --rerun 2 \
+    --pairfile selected_pairs_10.json \
+    --num_decoders 3
+python -m src.init_ensemble \
+    --encoder_seed 12 \
+    --rerun 3 \
+    --pairfile selected_pairs_10.json \
+    --num_decoders 3
+python -m src.init_ensemble \
+    --encoder_seed 12 \
+    --rerun 4 \
+    --pairfile selected_pairs_10.json \
+    --num_decoders 3
+
+python -m src.optimize_ensemble \
+  --encoder_seed 12 \
+  --pairfile selected_pairs_10.json \
+  --num_decoders 3 \
+  --reruns 0 1 2 3 4
+
+python -m src.evaluate_cov \
+  --pairfile selected_pairs_10.json \
+  --encoder_seed 12 \
+  --reruns 0 1 2 3 4 \
+  --max_decoders 3
