@@ -3,7 +3,7 @@ vae:
   input_dim: 50
   num_decoders: 3
 training:
-  epochs: 100
+  epochs: 200
   lr: 1e-3
   batch_size: 64
   seed: 123

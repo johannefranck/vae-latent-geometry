@@ -112,7 +112,7 @@ def main(seed, pairfile, num_decoders):
             continue
 
         path_coords = grid[path_idx].to(device)
-        a, b = path_coords[0], path_coords[-1]
+        a, b = z_a, z_b
         spline = GeodesicSpline((a, b), basis, n_poly=4).to(device)
 
         t_vals = torch.linspace(0, 1, len(path_coords), device=device)
@@ -128,7 +128,7 @@ def main(seed, pairfile, num_decoders):
         optimizer.step(closure)
 
         spline_data.append({
-            "a": a.cpu(), "b": b.cpu(),
+            "a": z_a.cpu(), "b": z_b.cpu(),
             "a_index": idx_a, "b_index": idx_b,
             "a_label": next(r["label"] for r in representatives if r["index"] == idx_a),
             "b_label": next(r["label"] for r in representatives if r["index"] == idx_b),

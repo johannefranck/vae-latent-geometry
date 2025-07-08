@@ -114,7 +114,7 @@ def main(seed, pairfile):
         else:
             target = path_coords.clone().detach().to(dtype=torch.float32, device=device)
 
-        a, b = target[0], target[-1]
+        a, b = target[0], target[-1] # maybe should be z_start, z_end! TODO: check
         spline = GeodesicSpline((a, b), basis, n_poly=n_poly).to(device)
 
         t_vals = torch.linspace(0, 1, len(target), device=device)

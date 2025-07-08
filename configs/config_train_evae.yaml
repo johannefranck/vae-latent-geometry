@@ -1,0 +1,10 @@
+training:
+  seeds: [12, 123]               # List of rerun seeds 
+  epochs: 10 
+  batch_size: 64
+  lr: 0.001
+  ensemble_sizes: [1, 2]     # Number of decoders to try
+
+vae:
+  input_dim: 50
+  latent_dim: 2

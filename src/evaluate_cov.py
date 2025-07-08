@@ -23,6 +23,13 @@ def compute_cov(lengths_dict):
     return float(covs.mean())
 
 def main(pairfile, seeds, max_decoders):
+    d1 = torch.load("src/artifacts/spline_ensemble_optimized_seed12_p50_d1.pt")
+    d2 = torch.load("src/artifacts/spline_ensemble_optimized_seed123_p50_d1.pt")
+    print("[DEBUG] Example latent a (first pair) seed 12 vs 123:")
+    print(torch.norm(d1[0]["a"] - d2[0]["a"]))
+    print(d1[1]["length_euclidean"])
+    print(d2[1]["length_euclidean"])
+
     pair_tag = Path(pairfile).stem.replace("selected_pairs_", "")
     geo_results = {}
     euc_results = {}
