@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J evae_train[1-3]
+#BSUB -J evae_train
 #BSUB -q gpua100
 #BSUB -W 01:00
 #BSUB -n 1
@@ -19,14 +19,5 @@ mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface" "logs"
 
 export PYTHONPATH=$PWD:$PYTHONPATH
 
-DECODER_LIST=(1 2 3)
-IDX=$((LSB_JOBINDEX - 1))
-NUM_DECODERS=${DECODER_LIST[$IDX]}
-
-echo "Training EVAE with $NUM_DECODERS decoders"
-
-CONFIG_OUT=configs/config_run_d${NUM_DECODERS}.yaml
-sed "s/num_decoders:.*/num_decoders: ${NUM_DECODERS}/" configs/config.yaml > $CONFIG_OUT
-
 # Run with -m src.train
-python -m src.train $CONFIG_OUT
+python -m src.train_evae configs/config_train_evae.yaml

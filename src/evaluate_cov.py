@@ -22,60 +22,51 @@ def compute_cov(lengths_dict):
     covs = std / (mean + 1e-8)
     return float(covs.mean())
 
-def main(pairfile, seeds, max_decoders):
-    d1 = torch.load("src/artifacts/spline_ensemble_optimized_seed12_p50_d1.pt")
-    d2 = torch.load("src/artifacts/spline_ensemble_optimized_seed123_p50_d1.pt")
-    print("[DEBUG] Example latent a (first pair) seed 12 vs 123:")
-    print(torch.norm(d1[0]["a"] - d2[0]["a"]))
-    print(d1[1]["length_euclidean"])
-    print(d2[1]["length_euclidean"])
-
+def main(pairfile, encoder_seed, reruns, max_decoders):
     pair_tag = Path(pairfile).stem.replace("selected_pairs_", "")
     geo_results = {}
     euc_results = {}
 
     for d in range(1, max_decoders + 1):
-        print(f"\n[INFO] Evaluating decoder count: {d}")
+        print(f"\n[INFO] Evaluating ensemble size: {d} decoder(s)")
         all_geo = {}
         all_euc = {}
 
-        valid_pairs = None  # Intersection across seeds
+        valid_pairs = None
 
-        for seed in seeds:
-            path = f"src/artifacts/spline_ensemble_optimized_seed{seed}_p{pair_tag}_d{d}.pt"
-            if not Path(path).exists():
-                print(f"[WARN] Missing file: {path}")
-                continue
+        for rerun in reruns:
+            for decoder_idx in range(d):  # Use first `d` decoders
+                fname = f"src/artifacts/spline_ensemble_optimized_seed{encoder_seed}_p{pair_tag}_rerun{rerun}_dec{decoder_idx}.pt"
+                if not Path(fname).exists():
+                    print(f"[WARN] Missing: {fname}")
+                    continue
+                geo_dict, euc_dict = load_lengths(fname)
 
-            geo_dict, euc_dict = load_lengths(path)
+                if valid_pairs is None:
+                    valid_pairs = set(geo_dict.keys())
+                else:
+                    valid_pairs &= set(geo_dict.keys())
 
-            if valid_pairs is None:
-                valid_pairs = set(geo_dict.keys())
-            else:
-                valid_pairs &= set(geo_dict.keys())
-
-            for pair in geo_dict:
-                all_geo.setdefault(pair, []).extend(geo_dict[pair])
-            for pair in euc_dict:
-                all_euc.setdefault(pair, []).extend(euc_dict[pair])
+                for pair in geo_dict:
+                    all_geo.setdefault(pair, []).extend(geo_dict[pair])
+                for pair in euc_dict:
+                    all_euc.setdefault(pair, []).extend(euc_dict[pair])
 
         if not valid_pairs:
             print(f"[WARN] No common pairs for d={d}")
             continue
 
-        expected = len(seeds) * d
-        print(f"[DEBUG] d={d} | Found {len(valid_pairs)} common pairs across seeds")
-        print(f"[DEBUG] d={d} | Expected {expected} splines per pair")
+        expected = len(reruns) * d
+        print(f"[DEBUG] d={d} | Valid pairs: {len(valid_pairs)} | Expected per pair: {expected}")
 
         filtered_geo = [all_geo[p] for p in valid_pairs if len(all_geo[p]) == expected]
         filtered_euc = [all_euc[p] for p in valid_pairs if len(all_euc[p]) == expected]
 
         if not filtered_geo or not filtered_euc:
-            print(f"[WARN] Skipping d={d}: incomplete pair coverage")
+            print(f"[WARN] Skipping d={d} due to incomplete data.")
             continue
 
-        # Just before compute_cov
-        print("\n[SANITY] Example Euclidean lengths for a pair:")
+        print("[SANITY] Example Euclidean lengths for a pair:")
         for k, v in all_euc.items():
             if len(v) == expected:
                 print(f"{k}: {v}")
@@ -88,8 +79,8 @@ def main(pairfile, seeds, max_decoders):
         euc_results[d] = cov_euc
         print(f"[OK] d={d} | CoV geo: {cov_geo:.4f} | CoV euc: {cov_euc:.4f}")
 
-    # Save JSON
-    out_json = f"cov_results_seeds{'-'.join(map(str, seeds))}_p{pair_tag}.json"
+    # Save results
+    out_json = f"cov_results_seed{encoder_seed}_reruns{'-'.join(map(str, reruns))}_p{pair_tag}.json"
     with open(out_json, "w") as f:
         json.dump({"geodesic": geo_results, "euclidean": euc_results}, f, indent=2)
     print(f"[INFO] Saved: {out_json}")
@@ -104,24 +95,19 @@ def main(pairfile, seeds, max_decoders):
     plt.plot(decoders, geo_vals, label="Geodesic distance", marker='o')
     plt.xlabel("Number of Decoders")
     plt.ylabel("Coefficient of Variation")
-    plt.title(f"CoV vs. number of decoders (Seeds: {'+'.join(map(str, seeds))}, {pair_tag})")
+    plt.title(f"CoV vs. Number of Decoders (Seed={encoder_seed}, Reruns={len(reruns)}, {pair_tag})")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    out_plot = f"cov_plot_seeds{'-'.join(map(str, seeds))}_p{pair_tag}.png"
+    out_plot = f"cov_plot_seed{encoder_seed}_reruns{'-'.join(map(str, reruns))}_p{pair_tag}.png"
     plt.savefig(out_plot)
     print(f"[INFO] Saved plot: {out_plot}")
-
-    data1 = torch.load("src/artifacts/spline_ensemble_optimized_seed12_p50_d1.pt")
-    data2 = torch.load("src/artifacts/spline_ensemble_optimized_seed123_p50_d1.pt")
-
-    print(data1[0]["a"] - data2[0]["a"])  # should not be all zeros
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pairfile", type=str, required=True)
-    parser.add_argument("--seeds", nargs='+', type=int, required=True)
+    parser.add_argument("--encoder_seed", type=int, required=True)
+    parser.add_argument("--reruns", nargs='+', type=int, required=True)
     parser.add_argument("--max_decoders", type=int, default=3)
     args = parser.parse_args()
-    main(args.pairfile, args.seeds, args.max_decoders)
+    main(args.pairfile, args.encoder_seed, args.reruns, args.max_decoders)

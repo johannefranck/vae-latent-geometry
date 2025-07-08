@@ -1,0 +1,77 @@
+Loaded module: cuda/11.7
+
+Training models for seed 12
+ - Training EVAE with 1 decoder(s)
+Epoch   1 | Train: 253.3196 | Val: 401.5848
+Epoch  11 | Train: 155.0432 | Val: 158.5853
+Epoch  21 | Train: 149.6480 | Val: 150.4515
+Epoch  31 | Train: 145.1885 | Val: 144.8356
+Epoch  41 | Train: 142.3070 | Val: 142.2160
+Epoch  51 | Train: 140.2836 | Val: 140.1247
+Epoch  61 | Train: 138.2882 | Val: 138.3967
+Epoch  71 | Train: 137.1189 | Val: 137.0971
+Epoch  81 | Train: 135.9624 | Val: 136.1946
+Epoch  91 | Train: 135.1877 | Val: 135.5989
+Epoch 100 | Train: 134.7181 | Val: 135.0708
+ - Training EVAE with 2 decoder(s)
+Epoch   1 | Train: 299.8825 | Val: 286.6170
+Epoch  11 | Train: 158.7464 | Val: 162.4955
+Epoch  21 | Train: 153.5050 | Val: 154.2234
+Epoch  31 | Train: 149.9109 | Val: 148.8225
+Epoch  41 | Train: 146.7661 | Val: 146.2607
+Epoch  51 | Train: 144.8253 | Val: 144.4035
+Epoch  61 | Train: 143.0233 | Val: 142.7946
+Epoch  71 | Train: 141.4940 | Val: 141.3479
+Epoch  81 | Train: 140.0460 | Val: 140.0038
+Epoch  91 | Train: 138.9055 | Val: 139.0355
+Epoch 100 | Train: 138.1327 | Val: 138.1158
+ - Training EVAE with 3 decoder(s)
+Epoch   1 | Train: 355.3834 | Val: 292.0882
+Epoch  11 | Train: 166.2958 | Val: 170.8255
+Epoch  21 | Train: 162.0376 | Val: 162.8016
+Epoch  31 | Train: 157.4655 | Val: 156.5345
+Epoch  41 | Train: 154.6321 | Val: 153.8259
+Epoch  51 | Train: 151.8654 | Val: 151.2309
+Epoch  61 | Train: 149.5262 | Val: 148.9484
+Epoch  71 | Train: 147.6179 | Val: 147.2207
+Epoch  81 | Train: 145.8818 | Val: 145.4882
+Epoch  91 | Train: 144.4576 | Val: 144.1014
+Epoch 100 | Train: 143.0956 | Val: 142.7180
+
+Training models for seed 123
+ - Training EVAE with 1 decoder(s)
+Epoch   1 | Train: 224.0491 | Val: 357.4912
+Epoch  11 | Train: 152.3662 | Val: 156.5793
+Epoch  21 | Train: 147.4097 | Val: 149.0989
+Epoch  31 | Train: 144.8523 | Val: 144.7021
+Epoch  41 | Train: 142.3120 | Val: 142.5739
+Epoch  51 | Train: 140.4409 | Val: 140.3933
+Epoch  61 | Train: 139.0027 | Val: 139.0008
+Epoch  71 | Train: 137.6919 | Val: 138.2107
+Epoch  81 | Train: 136.6463 | Val: 137.0691
+Epoch  91 | Train: 135.8033 | Val: 136.1386
+Epoch 100 | Train: 134.9798 | Val: 135.5289
+ - Training EVAE with 2 decoder(s)
+Epoch   1 | Train: 294.5054 | Val: 302.1067
+Epoch  11 | Train: 158.9787 | Val: 163.7776
+Epoch  21 | Train: 155.2509 | Val: 156.9343
+Epoch  31 | Train: 152.1465 | Val: 151.7215
+Epoch  41 | Train: 149.1980 | Val: 149.2108
+Epoch  51 | Train: 146.8338 | Val: 146.8907
+Epoch  61 | Train: 144.3300 | Val: 144.3807
+Epoch  71 | Train: 142.5366 | Val: 142.3970
+Epoch  81 | Train: 141.1248 | Val: 141.1235
+Epoch  91 | Train: 139.8853 | Val: 140.0150
+Epoch 100 | Train: 138.8896 | Val: 139.3946
+ - Training EVAE with 3 decoder(s)
+Epoch   1 | Train: 344.9450 | Val: 314.0788
+Epoch  11 | Train: 162.8278 | Val: 167.5027
+Epoch  21 | Train: 158.0412 | Val: 160.1952
+Epoch  31 | Train: 156.0435 | Val: 155.8011
+Epoch  41 | Train: 152.6755 | Val: 152.3224
+Epoch  51 | Train: 150.3433 | Val: 150.3987
+Epoch  61 | Train: 148.6666 | Val: 148.4834
+Epoch  71 | Train: 147.0719 | Val: 147.0613
+Epoch  81 | Train: 145.4606 | Val: 145.4987
+Epoch  91 | Train: 143.9644 | Val: 143.9543
+Epoch 100 | Train: 142.8995 | Val: 143.2431

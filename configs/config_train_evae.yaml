@@ -1,9 +1,10 @@
 training:
-  seeds: [12, 123]               # List of rerun seeds 
-  epochs: 10 
+  encoder_seed: 12           # Seed for encoder & data split
+  reruns: [0, 1, 2]          # Rerun IDs — only decoder reinitialized
+  epochs: 100
   batch_size: 64
   lr: 0.001
-  ensemble_sizes: [1, 2]     # Number of decoders to try
+  ensemble_sizes: [1, 2, 3]  # Number of decoders in ensemble
 
 vae:
   input_dim: 50

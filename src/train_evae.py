@@ -6,7 +6,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
-from src.vae import VAE, EVAE
+from src.vae import EVAE
 import torch.optim as optim
 
 def set_seed(seed):
@@ -24,8 +24,10 @@ def load_data(path, batch_size, seed):
     n_val = int(len(data_tensor) * val_ratio)
     n_train = len(data_tensor) - n_val
 
-    train_dataset, val_dataset = random_split(data_tensor, [n_train, n_val],
-                                              generator=torch.Generator().manual_seed(seed))
+    train_dataset, val_dataset = random_split(
+        data_tensor, [n_train, n_val],
+        generator=torch.Generator().manual_seed(seed)
+    )
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     return data_tensor, train_loader, val_loader
@@ -85,13 +87,14 @@ def main(config_path):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
-    seeds = config["training"]["seeds"]
+    reruns = config["training"]["reruns"]
+    encoder_seed = config["training"]["encoder_seed"]
     epochs = config["training"]["epochs"]
     batch_size = config["training"]["batch_size"]
     lr = config["training"]["lr"]
-    ensemble_sizes = config["training"]["ensemble_sizes"]
     input_dim = config["vae"]["input_dim"]
     latent_dim = config["vae"]["latent_dim"]
+    max_decoders = max(config["training"]["ensemble_sizes"])
 
     data_dir = "data/"
     artifact_dir = os.path.join("src", "artifacts")
@@ -99,19 +102,18 @@ def main(config_path):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    for seed in seeds:
-        print(f"\nTraining models for seed {seed}")
-        set_seed(seed)
-        data_tensor, train_loader, val_loader = load_data(data_dir, batch_size, seed)
+    print(f"\n[INFO] Training with fixed encoder_seed={encoder_seed}")
+    set_seed(encoder_seed)
+    _, train_loader, val_loader = load_data(data_dir, batch_size, encoder_seed)
 
-        for ensemble_size in ensemble_sizes:
-            print(f" - Training EVAE with {ensemble_size} decoder(s)")
-            model = EVAE(input_dim=input_dim, latent_dim=latent_dim,
-                         num_decoders=ensemble_size).to(device)
+    for rerun in reruns:
+        print(f"\n[INFO] Rerun {rerun}: Reinitializing decoders")
+        model = EVAE(input_dim=input_dim, latent_dim=latent_dim,
+                     num_decoders=max_decoders).to(device)
 
-            suffix = f"EVAE_ld{latent_dim}_dec{ensemble_size}_ep{epochs}_bs{batch_size}_lr{lr}_seed{seed}"
-            save_prefix = os.path.join(artifact_dir, suffix)
-            train_model(model, train_loader, val_loader, epochs, lr, device, save_prefix)
+        suffix = f"EVAE_ld{latent_dim}_dec{max_decoders}_ep{epochs}_bs{batch_size}_lr{lr}_encseed{encoder_seed}_rerun{rerun}"
+        save_prefix = os.path.join(artifact_dir, suffix)
+        train_model(model, train_loader, val_loader, epochs, lr, device, save_prefix)
 
 if __name__ == "__main__":
     config_file = sys.argv[1] if len(sys.argv) > 1 else "configs/config_train_evae.yaml"

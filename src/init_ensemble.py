@@ -1,6 +1,4 @@
 import os
-import re
-import json
 import argparse
 import numpy as np
 import torch
@@ -9,15 +7,18 @@ from pathlib import Path
 from scipy.spatial import KDTree
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import dijkstra
+
 from src.select_representative_pairs import load_pairs
-from src.vae import VAE, EVAE
+from src.vae import EVAE
 from src.single_decoder.optimize_energy import GeodesicSpline, construct_nullspace_basis
+
 
 def set_seed(seed):
     torch.manual_seed(seed)
     np.random.seed(seed)
     torch.use_deterministic_algorithms(True)
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
 
 def compute_entropy(outputs, eps=1e-8):
     std = outputs.std(dim=0)
@@ -26,6 +27,7 @@ def compute_entropy(outputs, eps=1e-8):
     entropy_proxy -= entropy_proxy.min()
     entropy_proxy /= entropy_proxy.max() + eps
     return entropy_proxy
+
 
 def build_entropy_weighted_graph(grid, decoders, k=6):
     with torch.no_grad():
@@ -42,6 +44,7 @@ def build_entropy_weighted_graph(grid, decoders, k=6):
             graph[i, j] = graph[j, i] = weight
     return graph.tocsr(), tree
 
+
 def create_latent_grid(latents, n=200, margin=0.1):
     z_min = latents.min(axis=0)
     z_max = latents.max(axis=0)
@@ -54,89 +57,95 @@ def create_latent_grid(latents, n=200, margin=0.1):
     grid = np.stack([mesh_x, mesh_y], axis=-1).reshape(-1, 2)
     return torch.tensor(grid, dtype=torch.float32), (n, n)
 
+
 def main(encoder_seed, rerun, pairfile, num_decoders):
     set_seed(encoder_seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Load data and model
     data = np.load("data/tasic-pca50.npy")
     data_tensor = torch.tensor(data, dtype=torch.float32).to(device)
 
     suffix = f"EVAE_ld2_dec{num_decoders}_ep100_bs64_lr0.001_encseed{encoder_seed}_rerun{rerun}"
-    model = EVAE(input_dim=50, latent_dim=2, num_decoders=num_decoders).to(device)
+    model_path = f"src/artifacts/{suffix}_best.pth"
 
-    path = f"src/artifacts/{suffix}_best.pth"
-    model.load_state_dict(torch.load(path, map_location=device))
+    model = EVAE(input_dim=50, latent_dim=2, num_decoders=num_decoders).to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
-    # ----- Compute latents dynamically -----
     with torch.no_grad():
-        latents = model.encoder(data_tensor).mean  # (N, 2)
+        latents = model.encoder(data_tensor).mean  # shape (N, 2)
 
     grid, _ = create_latent_grid(latents.cpu().numpy(), n=100)
     grid = grid.to(device)
-    decoders = model.decoders
-    graph, tree = build_entropy_weighted_graph(grid, decoders, k=8)
     basis, _ = construct_nullspace_basis(n_poly=4, device=device)
 
     pairs_path = f"src/artifacts/{pairfile}"
     pair_tag = Path(pairfile).stem.replace("selected_pairs_", "")
     representatives, pairs = load_pairs(pairs_path)
 
-    spline_data = []
-    for idx_a, idx_b in tqdm(pairs, desc="Fitting splines"):
-        z_a = latents[idx_a]
-        z_b = latents[idx_b]
+    for decoder_idx in range(num_decoders):
+        decoder = model.decoders[decoder_idx:decoder_idx + 1]
+        graph, tree = build_entropy_weighted_graph(grid, decoder, k=8)
 
-        start_idx = tree.query(z_a.cpu().numpy())[1]
-        end_idx = tree.query(z_b.cpu().numpy())[1]
-        if start_idx == end_idx:
-            continue
+        spline_data = []
+        for idx_a, idx_b in tqdm(pairs, desc=f"Decoder {decoder_idx}"):
+            z_a = latents[idx_a]
+            z_b = latents[idx_b]
 
-        _, pred = dijkstra(graph, indices=[start_idx], return_predecessors=True)
-        path_idx = []
-        node = end_idx
-        while node != start_idx:
-            if node == -9999:
-                path_idx = []
-                break
-            path_idx.append(node)
-            node = pred[0][node]
-        path_idx = [start_idx] + path_idx[::-1]
-        if not path_idx:
-            continue
+            start_idx = tree.query(z_a.cpu().numpy())[1]
+            end_idx = tree.query(z_b.cpu().numpy())[1]
+            if start_idx == end_idx:
+                continue
 
-        path_coords = grid[path_idx].to(device)
-        a, b = z_a, z_b
-        spline = GeodesicSpline((a, b), basis, n_poly=4).to(device)
+            _, pred = dijkstra(graph, indices=[start_idx], return_predecessors=True)
+            path_idx = []
+            node = end_idx
+            while node != start_idx:
+                if node == -9999:
+                    path_idx = []
+                    break
+                path_idx.append(node)
+                node = pred[0][node]
+            path_idx = [start_idx] + path_idx[::-1]
+            if not path_idx:
+                continue
 
-        t_vals = torch.linspace(0, 1, len(path_coords), device=device)
-        optimizer = torch.optim.LBFGS([spline.omega], max_iter=50)
+            path_coords = grid[path_idx].to(device)
+            spline = GeodesicSpline((z_a, z_b), basis, n_poly=4).to(device)
 
-        def closure():
-            optimizer.zero_grad()
-            pred = spline(t_vals)
-            loss = torch.nn.functional.mse_loss(pred, path_coords)
-            loss.backward()
-            return loss
+            t_vals = torch.linspace(0, 1, len(path_coords), device=device)
+            optimizer = torch.optim.LBFGS([spline.omega], max_iter=50)
 
-        optimizer.step(closure)
+            def closure():
+                optimizer.zero_grad()
+                pred = spline(t_vals)
+                loss = torch.nn.functional.mse_loss(pred, path_coords)
+                loss.backward()
+                return loss
 
-        spline_data.append({
-            "a": z_a.cpu(), "b": z_b.cpu(),
-            "a_index": idx_a, "b_index": idx_b,
-            "a_label": next(r["label"] for r in representatives if r["index"] == idx_a),
-            "b_label": next(r["label"] for r in representatives if r["index"] == idx_b),
-            "n_poly": 4, "basis": basis.cpu(),
-            "omega_init": spline.omega.detach().cpu()
-        })
+            optimizer.step(closure)
 
-    if len(spline_data) == 0:
-        print("No splines fitted. Exiting.")
-        return
+            spline_data.append({
+                "a": z_a.cpu(), "b": z_b.cpu(),
+                "a_index": idx_a, "b_index": idx_b,
+                "a_label": next(r["label"] for r in representatives if r["index"] == idx_a),
+                "b_label": next(r["label"] for r in representatives if r["index"] == idx_b),
+                "n_poly": 4, "basis": basis.cpu(),
+                "omega_init": spline.omega.detach().cpu()
+            })
 
-    out_path = f"src/artifacts/spline_ensemble_seed{encoder_seed}_p{pair_tag}_d{num_decoders}_rerun{rerun}.pt"
-    torch.save({"spline_data": spline_data, "pairs": pairs, "representatives": representatives}, out_path)
-    print(f"[INFO] Saved: {out_path} | Total: {len(spline_data)} splines")
+        if spline_data:
+            out_path = f"src/artifacts/spline_ensemble_seed{encoder_seed}_p{pair_tag}_rerun{rerun}_dec{decoder_idx}.pt"
+            torch.save({
+                "spline_data": spline_data,
+                "pairs": pairs,
+                "representatives": representatives
+            }, out_path)
+            print(f"[INFO] Saved: {out_path} | Total: {len(spline_data)} splines")
+        else:
+            print(f"[WARN] No splines created for decoder {decoder_idx}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -146,4 +155,3 @@ if __name__ == "__main__":
     parser.add_argument("--num_decoders", type=int, required=True)
     args = parser.parse_args()
     main(args.encoder_seed, args.rerun, args.pairfile, args.num_decoders)
-
