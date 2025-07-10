@@ -39,7 +39,7 @@ class GaussianDecoder(nn.Module):
     def forward(self, z):
         mean_log_std = self.decoder_net(z)
         mean, log_std = mean_log_std.chunk(2, dim=-1)
-        std = torch.exp(log_std.clamp(min=-2.0, max=2.0))  # std in [~0.1, ~7.4]
+        std = torch.exp(log_std.clamp(min=-2.0, max=2.0))
         return td.Independent(td.Normal(mean, std), 1)
 
 class VAE(nn.Module):
@@ -81,6 +81,7 @@ class EVAE(nn.Module):
             GaussianDecoder(latent_dim, input_dim)
             for _ in range(num_decoders)
         ])
+        self.decoder = self.decoders[0]  # legacy support for single decoder code
         self.prior = GaussianPrior(latent_dim)
 
     def elbo(self, x, beta=1.0, decoder_idx=None, return_parts=False):
