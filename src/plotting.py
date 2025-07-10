@@ -321,6 +321,7 @@ def build_distance_matrices(
         plt.savefig(path, dpi=300)
         plt.close()
 
+    print(f"Plotting geodesic and euclidean distance matrices to {plot_path_geo} and {plot_path_euc}")
 
     plot_matrix(D_geo, f"Geodesic Distance Matrix - rerun {rerun}, dec {num_decoders}", plot_path_geo)
     plot_matrix(D_euc, f"Euclidean Distance Matrix - rerun {rerun}, dec {num_decoders}", plot_path_euc)

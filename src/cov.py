@@ -42,7 +42,7 @@ def cov_mode_ensemble(pairs=10, num_decoders=6):
     decoder_counts = list(range(1, num_decoders + 1))  # [1, 2, ..., num_decoders]
     reruns = list(range(10))
     n_poly = 4
-    batch_size = 200
+    batch_size = 500
     n_segments = 1000 # segments pr spline, t discretization
     os.makedirs(save_dir, exist_ok=True)
 

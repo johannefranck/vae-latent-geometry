@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J optimize
+#BSUB -J optimize50
 #BSUB -q gpua100
 #BSUB -W 09:00
 #BSUB -n 1

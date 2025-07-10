@@ -252,6 +252,9 @@ def optimize_energy(
         if step % 50 == 0:
             print(f"[Step {step}] Energy: {energy.mean():.4f}")
 
+        # Early stopping condition if no improvement in last 50 steps
+
+
     if ensemble:
         final_decoder = decoders
         lengths = compute_geodesic_lengths_ensemble(model, final_decoder, t_vals, M=M)
