@@ -1,9 +1,0 @@
-vae:
-  latent_dim: 2
-  input_dim: 50
-  num_decoders: 1
-training:
-  epochs: 200
-  lr: 1e-3
-  batch_size: 64
-  seed: 123

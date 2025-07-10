@@ -1,0 +1,393 @@
+Loaded module: cuda/11.7
+
+[INFO] Using global_seed=12
+
+[INFO] Training EVAE: decoders=1, rerun=0
+Epoch   1 | Train: 253.3196 | Val: 401.5848
+Epoch  11 | Train: 155.0432 | Val: 158.5853
+Epoch  21 | Train: 149.6480 | Val: 150.4515
+Epoch  31 | Train: 145.1885 | Val: 144.8356
+Epoch  41 | Train: 142.3070 | Val: 142.2160
+Epoch  51 | Train: 140.2836 | Val: 140.1247
+Epoch  61 | Train: 138.2882 | Val: 138.3967
+Epoch  71 | Train: 137.1189 | Val: 137.0971
+Epoch  81 | Train: 135.9624 | Val: 136.1946
+Epoch  91 | Train: 135.1877 | Val: 135.5989
+Epoch 100 | Train: 134.7181 | Val: 135.0708
+
+[INFO] Training EVAE: decoders=1, rerun=1
+Epoch   1 | Train: 261.0238 | Val: 283.8604
+Epoch  11 | Train: 155.4257 | Val: 158.9808
+Epoch  21 | Train: 147.4982 | Val: 148.8615
+Epoch  31 | Train: 144.9236 | Val: 144.5138
+Epoch  41 | Train: 141.3956 | Val: 141.3751
+Epoch  51 | Train: 139.2252 | Val: 139.1076
+Epoch  61 | Train: 137.7290 | Val: 137.7097
+Epoch  71 | Train: 136.8366 | Val: 136.9474
+Epoch  81 | Train: 135.8131 | Val: 136.0082
+Epoch  91 | Train: 135.1216 | Val: 135.1919
+Epoch 100 | Train: 134.9112 | Val: 135.1736
+
+[INFO] Training EVAE: decoders=1, rerun=2
+Epoch   1 | Train: 236.6046 | Val: 350.6499
+Epoch  11 | Train: 152.5970 | Val: 156.1835
+Epoch  21 | Train: 148.4817 | Val: 149.2434
+Epoch  31 | Train: 145.0753 | Val: 144.4450
+Epoch  41 | Train: 142.3071 | Val: 141.7580
+Epoch  51 | Train: 140.0583 | Val: 139.8962
+Epoch  61 | Train: 138.4689 | Val: 138.4067
+Epoch  71 | Train: 137.5847 | Val: 137.3660
+Epoch  81 | Train: 136.7749 | Val: 137.1142
+Epoch  91 | Train: 136.0204 | Val: 136.5396
+Epoch 100 | Train: 135.4401 | Val: 135.4557
+
+[INFO] Training EVAE: decoders=1, rerun=3
+Epoch   1 | Train: 235.2667 | Val: 381.7688
+Epoch  11 | Train: 153.4051 | Val: 157.1007
+Epoch  21 | Train: 148.2109 | Val: 149.4122
+Epoch  31 | Train: 145.6202 | Val: 144.6654
+Epoch  41 | Train: 142.1729 | Val: 141.7276
+Epoch  51 | Train: 139.5033 | Val: 139.5022
+Epoch  61 | Train: 137.9517 | Val: 138.0413
+Epoch  71 | Train: 136.9937 | Val: 136.9352
+Epoch  81 | Train: 136.2283 | Val: 136.2773
+Epoch  91 | Train: 135.4670 | Val: 135.5159
+Epoch 100 | Train: 134.8264 | Val: 135.3175
+
+[INFO] Training EVAE: decoders=1, rerun=4
+Epoch   1 | Train: 233.4894 | Val: 355.9560
+Epoch  11 | Train: 151.0734 | Val: 154.8628
+Epoch  21 | Train: 145.6175 | Val: 146.6637
+Epoch  31 | Train: 143.1808 | Val: 142.8106
+Epoch  41 | Train: 140.4352 | Val: 139.8938
+Epoch  51 | Train: 138.6490 | Val: 138.5708
+Epoch  61 | Train: 137.2743 | Val: 137.1852
+Epoch  71 | Train: 136.1299 | Val: 136.0586
+Epoch  81 | Train: 135.0912 | Val: 135.6233
+Epoch  91 | Train: 134.3921 | Val: 134.8597
+Epoch 100 | Train: 133.8122 | Val: 134.2426
+
+[INFO] Training EVAE: decoders=1, rerun=5
+Epoch   1 | Train: 253.4279 | Val: 310.5212
+Epoch  11 | Train: 154.1213 | Val: 157.2545
+Epoch  21 | Train: 147.3099 | Val: 148.4500
+Epoch  31 | Train: 144.5647 | Val: 143.9344
+Epoch  41 | Train: 141.9375 | Val: 141.3726
+Epoch  51 | Train: 139.9643 | Val: 140.0629
+Epoch  61 | Train: 138.4275 | Val: 138.3914
+Epoch  71 | Train: 137.1261 | Val: 137.0142
+Epoch  81 | Train: 136.1212 | Val: 136.0250
+Epoch  91 | Train: 135.3316 | Val: 135.1689
+Epoch 100 | Train: 134.7982 | Val: 135.1102
+
+[INFO] Training EVAE: decoders=1, rerun=6
+Epoch   1 | Train: 248.1199 | Val: 296.6872
+Epoch  11 | Train: 204.4537 | Val: 215.1067
+Epoch  21 | Train: 161.7643 | Val: 161.6042
+Epoch  31 | Train: 151.2106 | Val: 150.3228
+Epoch  41 | Train: 145.5311 | Val: 145.0679
+Epoch  51 | Train: 142.2454 | Val: 142.0818
+Epoch  61 | Train: 139.5055 | Val: 139.2831
+Epoch  71 | Train: 137.6856 | Val: 137.6593
+Epoch  81 | Train: 136.1724 | Val: 136.3723
+Epoch  91 | Train: 135.4280 | Val: 135.7681
+Epoch 100 | Train: 134.7971 | Val: 135.3717
+
+[INFO] Training EVAE: decoders=1, rerun=7
+Epoch   1 | Train: 231.0699 | Val: 350.2002
+Epoch  11 | Train: 153.8022 | Val: 157.1665
+Epoch  21 | Train: 146.8082 | Val: 147.8354
+Epoch  31 | Train: 143.7661 | Val: 143.2309
+Epoch  41 | Train: 140.4465 | Val: 140.4912
+Epoch  51 | Train: 138.3732 | Val: 138.6270
+Epoch  61 | Train: 136.8463 | Val: 137.1009
+Epoch  71 | Train: 135.4905 | Val: 135.6205
+Epoch  81 | Train: 134.5231 | Val: 135.2655
+Epoch  91 | Train: 133.7879 | Val: 134.3649
+Epoch 100 | Train: 133.1455 | Val: 133.8274
+
+[INFO] Training EVAE: decoders=1, rerun=8
+Epoch   1 | Train: 252.3950 | Val: 310.3344
+Epoch  11 | Train: 153.2802 | Val: 156.9807
+Epoch  21 | Train: 147.8188 | Val: 148.9914
+Epoch  31 | Train: 145.2497 | Val: 144.7601
+Epoch  41 | Train: 142.6400 | Val: 142.1404
+Epoch  51 | Train: 140.1295 | Val: 139.7482
+Epoch  61 | Train: 137.6260 | Val: 137.4897
+Epoch  71 | Train: 136.1461 | Val: 136.0487
+Epoch  81 | Train: 134.9421 | Val: 134.9821
+Epoch  91 | Train: 134.0272 | Val: 134.3563
+Epoch 100 | Train: 133.6049 | Val: 134.1237
+
+[INFO] Training EVAE: decoders=1, rerun=9
+Epoch   1 | Train: 232.5951 | Val: 297.4605
+Epoch  11 | Train: 157.8981 | Val: 160.7754
+Epoch  21 | Train: 148.3783 | Val: 149.3495
+Epoch  31 | Train: 145.8968 | Val: 145.1858
+Epoch  41 | Train: 142.2245 | Val: 141.5327
+Epoch  51 | Train: 139.8419 | Val: 139.2405
+Epoch  61 | Train: 138.3275 | Val: 137.9685
+Epoch  71 | Train: 137.1656 | Val: 136.8672
+Epoch  81 | Train: 136.2911 | Val: 136.2247
+Epoch  91 | Train: 135.6162 | Val: 135.4451
+Epoch 100 | Train: 135.0030 | Val: 134.8117
+
+[INFO] Training EVAE: decoders=2, rerun=0
+Epoch   1 | Train: 288.6105 | Val: 522.2840
+Epoch  11 | Train: 157.8785 | Val: 160.6223
+Epoch  21 | Train: 153.7216 | Val: 154.4130
+Epoch  31 | Train: 150.7723 | Val: 150.0872
+Epoch  41 | Train: 147.9592 | Val: 147.4019
+Epoch  51 | Train: 145.1434 | Val: 144.6372
+Epoch  61 | Train: 142.9305 | Val: 142.4190
+Epoch  71 | Train: 141.4643 | Val: 141.2087
+Epoch  81 | Train: 140.4106 | Val: 140.1214
+Epoch  91 | Train: 139.4927 | Val: 139.2868
+Epoch 100 | Train: 138.7713 | Val: 138.5496
+
+[INFO] Training EVAE: decoders=2, rerun=1
+Epoch   1 | Train: 297.2046 | Val: 320.5170
+Epoch  11 | Train: 159.7580 | Val: 163.6944
+Epoch  21 | Train: 155.6364 | Val: 156.8314
+Epoch  31 | Train: 153.0686 | Val: 152.5955
+Epoch  41 | Train: 149.5551 | Val: 149.1835
+Epoch  51 | Train: 147.5696 | Val: 147.0190
+Epoch  61 | Train: 145.7124 | Val: 145.2764
+Epoch  71 | Train: 143.9581 | Val: 143.5883
+Epoch  81 | Train: 142.7150 | Val: 142.2479
+Epoch  91 | Train: 141.3216 | Val: 141.1552
+Epoch 100 | Train: 140.3926 | Val: 140.0520
+
+[INFO] Training EVAE: decoders=2, rerun=2
+Epoch   1 | Train: 302.3586 | Val: 292.3719
+Epoch  11 | Train: 160.4336 | Val: 164.0935
+Epoch  21 | Train: 156.0609 | Val: 156.8093
+Epoch  31 | Train: 153.1972 | Val: 152.4085
+Epoch  41 | Train: 149.9299 | Val: 149.1688
+Epoch  51 | Train: 147.9832 | Val: 147.3021
+Epoch  61 | Train: 145.6896 | Val: 145.2002
+Epoch  71 | Train: 143.9581 | Val: 143.6932
+Epoch  81 | Train: 142.4295 | Val: 142.1556
+Epoch  91 | Train: 141.1513 | Val: 140.9047
+Epoch 100 | Train: 140.0369 | Val: 139.8925
+
+[INFO] Training EVAE: decoders=2, rerun=3
+Epoch   1 | Train: 353.6373 | Val: 259.6733
+Epoch  11 | Train: 163.4894 | Val: 167.4210
+Epoch  21 | Train: 158.3803 | Val: 159.4382
+Epoch  31 | Train: 155.8588 | Val: 154.8496
+Epoch  41 | Train: 151.5671 | Val: 151.2182
+Epoch  51 | Train: 148.7927 | Val: 148.2298
+Epoch  61 | Train: 145.6717 | Val: 145.4654
+Epoch  71 | Train: 143.7829 | Val: 143.6477
+Epoch  81 | Train: 142.4750 | Val: 142.7200
+Epoch  91 | Train: 140.9459 | Val: 140.8621
+Epoch 100 | Train: 139.7627 | Val: 139.8837
+
+[INFO] Training EVAE: decoders=2, rerun=4
+Epoch   1 | Train: 310.9745 | Val: 299.8618
+Epoch  11 | Train: 159.3493 | Val: 163.0981
+Epoch  21 | Train: 156.0645 | Val: 156.7126
+Epoch  31 | Train: 154.2800 | Val: 153.0455
+Epoch  41 | Train: 150.7353 | Val: 149.5598
+Epoch  51 | Train: 147.7047 | Val: 147.0474
+Epoch  61 | Train: 145.2461 | Val: 144.7176
+Epoch  71 | Train: 143.2639 | Val: 143.3264
+Epoch  81 | Train: 141.6783 | Val: 141.4689
+Epoch  91 | Train: 140.2660 | Val: 140.0332
+Epoch 100 | Train: 139.3762 | Val: 139.3719
+
+[INFO] Training EVAE: decoders=2, rerun=5
+Epoch   1 | Train: 285.6798 | Val: 277.2602
+Epoch  11 | Train: 160.2847 | Val: 164.4949
+Epoch  21 | Train: 156.2804 | Val: 157.1019
+Epoch  31 | Train: 153.7298 | Val: 152.9455
+Epoch  41 | Train: 149.9609 | Val: 149.3183
+Epoch  51 | Train: 147.0976 | Val: 146.4944
+Epoch  61 | Train: 144.9822 | Val: 144.6281
+Epoch  71 | Train: 143.3753 | Val: 142.9609
+Epoch  81 | Train: 142.0453 | Val: 141.8044
+Epoch  91 | Train: 140.8592 | Val: 140.5865
+Epoch 100 | Train: 139.8418 | Val: 139.4882
+
+[INFO] Training EVAE: decoders=2, rerun=6
+Epoch   1 | Train: 271.9697 | Val: 408.6261
+Epoch  11 | Train: 158.5340 | Val: 161.9123
+Epoch  21 | Train: 153.6158 | Val: 154.6190
+Epoch  31 | Train: 151.1637 | Val: 150.3714
+Epoch  41 | Train: 147.9236 | Val: 147.3153
+Epoch  51 | Train: 145.5211 | Val: 145.0501
+Epoch  61 | Train: 143.6943 | Val: 143.2514
+Epoch  71 | Train: 142.1638 | Val: 141.7855
+Epoch  81 | Train: 140.7130 | Val: 140.5631
+Epoch  91 | Train: 139.7348 | Val: 139.5368
+Epoch 100 | Train: 138.6079 | Val: 138.4735
+
+[INFO] Training EVAE: decoders=2, rerun=7
+Epoch   1 | Train: 275.6703 | Val: 373.2927
+Epoch  11 | Train: 158.0348 | Val: 161.9177
+Epoch  21 | Train: 154.3369 | Val: 155.3115
+Epoch  31 | Train: 152.1172 | Val: 151.3723
+Epoch  41 | Train: 149.2616 | Val: 148.5565
+Epoch  51 | Train: 146.2417 | Val: 145.6317
+Epoch  61 | Train: 143.7054 | Val: 143.0695
+Epoch  71 | Train: 141.7692 | Val: 141.5273
+Epoch  81 | Train: 140.3587 | Val: 140.1752
+Epoch  91 | Train: 139.0651 | Val: 138.9765
+Epoch 100 | Train: 138.0305 | Val: 138.2111
+
+[INFO] Training EVAE: decoders=2, rerun=8
+Epoch   1 | Train: 285.9562 | Val: 262.8610
+Epoch  11 | Train: 179.4959 | Val: 198.0755
+Epoch  21 | Train: 172.9374 | Val: 165.9112
+Epoch  31 | Train: 157.6820 | Val: 156.8529
+Epoch  41 | Train: 152.4147 | Val: 151.6836
+Epoch  51 | Train: 149.1263 | Val: 148.5167
+Epoch  61 | Train: 147.2258 | Val: 146.9324
+Epoch  71 | Train: 145.6530 | Val: 145.3343
+Epoch  81 | Train: 144.2672 | Val: 144.0283
+Epoch  91 | Train: 142.8989 | Val: 143.0382
+Epoch 100 | Train: 141.6662 | Val: 142.0082
+
+[INFO] Training EVAE: decoders=2, rerun=9
+Epoch   1 | Train: 293.7157 | Val: 427.0633
+Epoch  11 | Train: 158.8029 | Val: 163.0355
+Epoch  21 | Train: 153.9255 | Val: 155.3472
+Epoch  31 | Train: 151.9954 | Val: 151.3193
+Epoch  41 | Train: 149.2127 | Val: 148.6897
+Epoch  51 | Train: 146.7607 | Val: 146.2710
+Epoch  61 | Train: 144.9364 | Val: 144.3736
+Epoch  71 | Train: 143.4096 | Val: 143.2487
+Epoch  81 | Train: 142.1478 | Val: 141.8849
+Epoch  91 | Train: 140.9037 | Val: 140.6037
+Epoch 100 | Train: 139.8299 | Val: 139.6597
+
+[INFO] Training EVAE: decoders=3, rerun=0
+Epoch   1 | Train: 345.9530 | Val: 316.5553
+Epoch  11 | Train: 161.1276 | Val: 164.9082
+Epoch  21 | Train: 157.5256 | Val: 158.3396
+Epoch  31 | Train: 156.6189 | Val: 155.7051
+Epoch  41 | Train: 153.7224 | Val: 152.8324
+Epoch  51 | Train: 150.4903 | Val: 150.0767
+Epoch  61 | Train: 148.6003 | Val: 147.8751
+Epoch  71 | Train: 146.5035 | Val: 145.7656
+Epoch  81 | Train: 144.7073 | Val: 144.1293
+Epoch  91 | Train: 143.0737 | Val: 142.5691
+Epoch 100 | Train: 142.0341 | Val: 141.8206
+
+[INFO] Training EVAE: decoders=3, rerun=1
+Epoch   1 | Train: 344.6228 | Val: 285.9079
+Epoch  11 | Train: 164.2765 | Val: 169.4995
+Epoch  21 | Train: 159.2993 | Val: 160.0373
+Epoch  31 | Train: 157.5005 | Val: 156.6957
+Epoch  41 | Train: 155.1301 | Val: 154.6132
+Epoch  51 | Train: 152.2038 | Val: 151.7039
+Epoch  61 | Train: 150.0879 | Val: 149.6684
+Epoch  71 | Train: 148.3260 | Val: 147.9162
+Epoch  81 | Train: 146.9364 | Val: 146.3846
+Epoch  91 | Train: 145.3853 | Val: 144.9676
+Epoch 100 | Train: 144.0436 | Val: 143.8604
+
+[INFO] Training EVAE: decoders=3, rerun=2
+Epoch   1 | Train: 357.8852 | Val: 274.3711
+Epoch  11 | Train: 163.4483 | Val: 167.8073
+Epoch  21 | Train: 157.6929 | Val: 158.4483
+Epoch  31 | Train: 155.7804 | Val: 154.9920
+Epoch  41 | Train: 153.2030 | Val: 152.2587
+Epoch  51 | Train: 150.4691 | Val: 149.8373
+Epoch  61 | Train: 148.6168 | Val: 148.0788
+Epoch  71 | Train: 146.9811 | Val: 146.5495
+Epoch  81 | Train: 145.2117 | Val: 144.8194
+Epoch  91 | Train: 143.6534 | Val: 143.3764
+Epoch 100 | Train: 142.3291 | Val: 142.3801
+
+[INFO] Training EVAE: decoders=3, rerun=3
+Epoch   1 | Train: 301.9759 | Val: 309.5673
+Epoch  11 | Train: 160.3865 | Val: 164.1098
+Epoch  21 | Train: 157.3799 | Val: 158.2151
+Epoch  31 | Train: 155.3933 | Val: 154.7168
+Epoch  41 | Train: 153.1407 | Val: 152.5544
+Epoch  51 | Train: 150.7685 | Val: 150.3319
+Epoch  61 | Train: 149.1790 | Val: 148.6768
+Epoch  71 | Train: 147.7908 | Val: 147.1009
+Epoch  81 | Train: 146.4173 | Val: 145.7925
+Epoch  91 | Train: 145.1912 | Val: 144.9068
+Epoch 100 | Train: 144.2233 | Val: 144.1950
+
+[INFO] Training EVAE: decoders=3, rerun=4
+Epoch   1 | Train: 311.3904 | Val: 309.8891
+Epoch  11 | Train: 161.3568 | Val: 165.7568
+Epoch  21 | Train: 157.4070 | Val: 158.5746
+Epoch  31 | Train: 155.4534 | Val: 154.7142
+Epoch  41 | Train: 153.1860 | Val: 152.5690
+Epoch  51 | Train: 149.9468 | Val: 149.2885
+Epoch  61 | Train: 147.7688 | Val: 147.0422
+Epoch  71 | Train: 146.2226 | Val: 145.5759
+Epoch  81 | Train: 144.8834 | Val: 144.3285
+Epoch  91 | Train: 143.7875 | Val: 143.2305
+Epoch 100 | Train: 142.7117 | Val: 142.4982
+
+[INFO] Training EVAE: decoders=3, rerun=5
+Epoch   1 | Train: 328.4317 | Val: 322.6310
+Epoch  11 | Train: 162.5152 | Val: 166.2939
+Epoch  21 | Train: 158.8218 | Val: 159.4351
+Epoch  31 | Train: 157.0781 | Val: 156.0563
+Epoch  41 | Train: 153.7371 | Val: 152.6438
+Epoch  51 | Train: 150.3982 | Val: 149.5897
+Epoch  61 | Train: 148.0269 | Val: 147.3903
+Epoch  71 | Train: 146.2642 | Val: 145.6285
+Epoch  81 | Train: 144.9171 | Val: 144.3987
+Epoch  91 | Train: 143.6629 | Val: 143.1524
+Epoch 100 | Train: 142.5396 | Val: 142.0271
+
+[INFO] Training EVAE: decoders=3, rerun=6
+Epoch   1 | Train: 322.4167 | Val: 341.9227
+Epoch  11 | Train: 161.4044 | Val: 165.9849
+Epoch  21 | Train: 157.7010 | Val: 158.7577
+Epoch  31 | Train: 156.3355 | Val: 155.4021
+Epoch  41 | Train: 153.3199 | Val: 152.8065
+Epoch  51 | Train: 150.3016 | Val: 149.9272
+Epoch  61 | Train: 148.2574 | Val: 147.5810
+Epoch  71 | Train: 146.5342 | Val: 145.8574
+Epoch  81 | Train: 145.0763 | Val: 144.6758
+Epoch  91 | Train: 143.8313 | Val: 143.5304
+Epoch 100 | Train: 143.0205 | Val: 142.9745
+
+[INFO] Training EVAE: decoders=3, rerun=7
+Epoch   1 | Train: 366.9122 | Val: 277.3674
+Epoch  11 | Train: 170.6687 | Val: 174.0089
+Epoch  21 | Train: 161.4312 | Val: 162.4791
+Epoch  31 | Train: 159.2145 | Val: 158.3378
+Epoch  41 | Train: 155.4488 | Val: 154.7961
+Epoch  51 | Train: 152.7006 | Val: 151.8771
+Epoch  61 | Train: 150.5212 | Val: 149.7062
+Epoch  71 | Train: 148.7995 | Val: 148.0293
+Epoch  81 | Train: 147.0655 | Val: 146.4863
+Epoch  91 | Train: 145.7923 | Val: 145.2877
+Epoch 100 | Train: 144.9411 | Val: 144.1408
+
+[INFO] Training EVAE: decoders=3, rerun=8
+Epoch   1 | Train: 309.9030 | Val: 363.1116
+Epoch  11 | Train: 162.8242 | Val: 167.0351
+Epoch  21 | Train: 158.6559 | Val: 159.4803
+Epoch  31 | Train: 156.9499 | Val: 156.0925
+Epoch  41 | Train: 153.5293 | Val: 152.6211
+Epoch  51 | Train: 150.5492 | Val: 149.9681
+Epoch  61 | Train: 148.6993 | Val: 148.1256
+Epoch  71 | Train: 147.2806 | Val: 146.7612
+Epoch  81 | Train: 145.6845 | Val: 145.4591
+Epoch  91 | Train: 144.4650 | Val: 144.0386
+Epoch 100 | Train: 143.4081 | Val: 143.4017
+
+[INFO] Training EVAE: decoders=3, rerun=9
+Epoch   1 | Train: 340.7331 | Val: 289.1701
+Epoch  11 | Train: 163.5130 | Val: 167.4523
+Epoch  21 | Train: 158.4632 | Val: 159.4701
+Epoch  31 | Train: 156.8655 | Val: 156.4402
+Epoch  41 | Train: 153.9153 | Val: 153.1579
+Epoch  51 | Train: 151.2023 | Val: 150.6560
+Epoch  61 | Train: 149.2832 | Val: 148.8205
+Epoch  71 | Train: 147.8462 | Val: 147.5020
+Epoch  81 | Train: 146.4030 | Val: 146.1247
+Epoch  91 | Train: 145.0048 | Val: 144.8284
+Epoch 100 | Train: 144.0350 | Val: 143.8175

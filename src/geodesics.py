@@ -154,10 +154,9 @@ def standardize(x, eps=1e-5):
     return (x - x.mean(dim=0, keepdim=True)) / (x.std(dim=0, keepdim=True) + eps)
 
 
-
 def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
     """
-    Optimized batched energy computation using vectorized decoder calls.
+    Optimized batched energy computation with decoder output normalization.
     """
     B = spline.a.shape[0]
     T = len(t_vals)
@@ -168,31 +167,25 @@ def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
     z = spline(t_vals)  # (T, B, D)
     z_flat = z.view(T * B, D)  # (TB, D)
 
-    # === Pre-decode all decoders once ===
-    # unscaled decoding
-    # decoded_all = torch.stack([
-    #     decoder(z_flat).mean.view(T, B, -1)  # (T, B, X)
-    #     for decoder in decoders
-    # ])  # (N_dec, T, B, X)
-    decoded_all = torch.stack([
-        standardize(decoder(z_flat).mean).view(T, B, -1)
-        for decoder in decoders
-    ])
+    decoded_all = []
+    for decoder in decoders:
+        out = decoder(z_flat).mean  # (TB, X)
+        decoded_all.append(out.view(T, B, -1))
 
+    decoded_all = torch.stack(decoded_all)  # (N_dec, T, B, X)
 
     total_energy = torch.zeros(B, device=device)
     rng = torch.Generator(device=device).manual_seed(456)
 
     for _ in range(M):
-        d1_idx = torch.randint(N_dec, (B,), generator=rng, device=device)  # (B,)
+        d1_idx = torch.randint(N_dec, (B,), generator=rng, device=device)
         d2_idx = torch.randint(N_dec, (B,), generator=rng, device=device)
 
-        # Index into (N_dec, T, B, X) using fancy indexing
         t_idx = torch.arange(T, device=device).view(-1, 1)  # (T, 1)
         b_idx = torch.arange(B, device=device).view(1, -1)  # (1, B)
 
         X1 = decoded_all[d1_idx, t_idx, b_idx]  # (T, B, X)
-        X2 = decoded_all[d2_idx, t_idx, b_idx]  # (T, B, X)
+        X2 = decoded_all[d2_idx, t_idx, b_idx]
 
         diffs = X2[1:] - X1[:-1]  # (T-1, B, X)
         total_energy += (diffs ** 2).sum(dim=2).sum(dim=0)
@@ -203,11 +196,39 @@ def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
 
 @torch.no_grad()
 def compute_geodesic_lengths(spline, decoder, t_vals):
+    T = len(t_vals)
+    dt = 1.0 / (T - 1) # scaling
     z = spline(t_vals)
     x = decoder(z.view(-1, z.shape[-1])).mean
     x = x.view(t_vals.shape[0], z.shape[1], -1)
     diffs = x[1:] - x[:-1]
-    return torch.norm(diffs, dim=2).sum(dim=0).cpu()
+    return (torch.norm(diffs, dim=2).sum(dim=0) * dt).cpu() # scaled by dt
+
+@torch.no_grad()
+def compute_geodesic_lengths_ensemble(spline, decoders, t_vals, M=3):
+    B = spline.a.shape[0]
+    T = len(t_vals)
+    D = spline.a.shape[1]
+    device = t_vals.device
+    N_dec = len(decoders)
+    dt = 1.0 / (T - 1)  # Add dt for proper arc length
+
+    z = spline(t_vals)  # (T, B, D)
+    z_flat = z.view(T * B, D)
+
+    lengths = torch.zeros(B, device=device)
+    rng = torch.Generator(device=device).manual_seed(456)
+
+    for _ in range(M):
+        d1_idx = torch.randint(N_dec, (1,), generator=rng, device=device).item()
+        decoder = decoders[d1_idx]
+        x = decoder(z_flat).mean.view(T, B, -1)
+        diffs = x[1:] - x[:-1]
+        lengths += torch.norm(diffs, dim=2).sum(dim=0) * dt  # dt scaled
+
+    return (lengths / M).cpu()
+
+
 
 def optimize_energy(
     a, b, omega_init, basis, decoders, n_poly, t_vals,
@@ -222,18 +243,21 @@ def optimize_energy(
         if ensemble:
             energy = compute_energy_ensemble_batched(model, decoders, t_vals, M)
         else:
-            # decoders is a single decoder module in this case
             energy = compute_energy(model, decoders, t_vals)
 
-        loss = energy 
+        loss = energy
         loss.sum().backward()
         optimizer.step()
 
         if step % 50 == 0:
             print(f"[Step {step}] Energy: {energy.mean():.4f}")
 
-    final_decoder = decoders[0] if ensemble else decoders
-    lengths = compute_geodesic_lengths(model, final_decoder, t_vals)
+    if ensemble:
+        final_decoder = decoders
+        lengths = compute_geodesic_lengths_ensemble(model, final_decoder, t_vals, M=M)
+    else:
+        lengths = compute_geodesic_lengths(model, decoders, t_vals)
+
     return model, lengths, model.omega.detach()
 
 

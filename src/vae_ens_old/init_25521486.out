@@ -1,0 +1,121 @@
+Loaded module: cuda/11.7
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:19,  2.25it/s]Decoder 0:  93%|█████████▎| 42/45 [00:00<00:00, 100.73it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 80.85it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun0_dec0.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:18,  2.35it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 85.92it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun1_dec0.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:17,  2.46it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 89.14it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun2_dec0.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:17,  2.49it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 117.06it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 89.54it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun3_dec0.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:17,  2.46it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 89.09it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun4_dec0.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.59it/s]Decoder 0:  93%|█████████▎| 42/45 [00:00<00:00, 112.45it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 90.76it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun5_dec0.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.65it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 122.47it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 94.11it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun6_dec0.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.59it/s]Decoder 0:  96%|█████████▌| 43/45 [00:00<00:00, 115.35it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 91.44it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun7_dec0.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.59it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.99it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun8_dec0.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.67it/s]Decoder 0:  91%|█████████ | 41/45 [00:00<00:00, 111.98it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.76it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun9_dec0.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.65it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 122.15it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 93.84it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun0_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  89%|████████▉ | 40/45 [00:00<00:00, 391.36it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 395.25it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun0_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.59it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 120.73it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.56it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun1_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  87%|████████▋ | 39/45 [00:00<00:00, 381.75it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 388.21it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun1_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.62it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 93.67it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun2_dec0.pt | Total: 44 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 442.00it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 441.15it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun2_dec1.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:17,  2.54it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 118.90it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 91.06it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun3_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 430.82it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 430.13it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun3_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.59it/s]Decoder 0:  89%|████████▉ | 40/45 [00:00<00:00, 107.23it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 90.63it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun4_dec0.pt | Total: 44 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 438.75it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 437.94it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun4_dec1.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.60it/s]Decoder 0:  98%|█████████▊| 44/45 [00:00<00:00, 117.94it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.13it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun5_dec0.pt | Total: 44 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 445.43it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 444.59it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun5_dec1.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.67it/s]Decoder 0:  98%|█████████▊| 44/45 [00:00<00:00, 119.99it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 93.93it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun6_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  89%|████████▉ | 40/45 [00:00<00:00, 390.83it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 393.74it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun6_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.65it/s]Decoder 0:  93%|█████████▎| 42/45 [00:00<00:00, 113.86it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.48it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun7_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 433.82it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 433.28it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun7_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.63it/s]Decoder 0:  89%|████████▉ | 40/45 [00:00<00:00, 107.72it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 90.87it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun8_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 434.86it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 434.27it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun8_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:17,  2.56it/s]Decoder 0:  89%|████████▉ | 40/45 [00:00<00:00, 106.13it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 89.54it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun9_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 434.70it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 434.09it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun9_dec1.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.65it/s]Decoder 0:  96%|█████████▌| 43/45 [00:00<00:00, 116.91it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 93.14it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun0_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 433.35it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 432.74it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun0_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  98%|█████████▊| 44/45 [00:00<00:00, 435.70it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 434.94it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun0_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.64it/s]Decoder 0:  93%|█████████▎| 42/45 [00:00<00:00, 113.81it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.40it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun1_dec0.pt | Total: 44 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 441.33it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 440.52it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun1_dec1.pt | Total: 44 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 443.02it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 442.20it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun1_dec2.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.61it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 121.19it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.96it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun2_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 431.57it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 431.04it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun2_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  98%|█████████▊| 44/45 [00:00<00:00, 432.78it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 432.07it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun2_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.65it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 122.19it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 93.90it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun3_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  96%|█████████▌| 43/45 [00:00<00:00, 428.35it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 428.18it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun3_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  87%|████████▋ | 39/45 [00:00<00:00, 386.82it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 393.13it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun3_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.59it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 120.48it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.39it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun4_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  96%|█████████▌| 43/45 [00:00<00:00, 428.12it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 427.86it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun4_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  98%|█████████▊| 44/45 [00:00<00:00, 434.69it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 433.94it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun4_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.63it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 93.84it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun5_dec0.pt | Total: 44 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  84%|████████▍ | 38/45 [00:00<00:00, 372.64it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 388.30it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun5_dec1.pt | Total: 44 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 442.37it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 441.57it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun5_dec2.pt | Total: 44 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.68it/s]Decoder 0:  91%|█████████ | 41/45 [00:00<00:00, 112.04it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.90it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun6_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  87%|████████▋ | 39/45 [00:00<00:00, 387.81it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 389.12it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun6_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  98%|█████████▊| 44/45 [00:00<00:00, 431.59it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 430.97it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun6_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.67it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 123.29it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 94.76it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun7_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  84%|████████▍ | 38/45 [00:00<00:00, 375.84it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 383.65it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun7_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  98%|█████████▊| 44/45 [00:00<00:00, 432.54it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 431.95it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun7_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:17,  2.59it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 120.31it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.27it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun8_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 435.66it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 435.06it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun8_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  98%|█████████▊| 44/45 [00:00<00:00, 437.49it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 436.75it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun8_dec2.pt | Total: 45 splines
+Decoder 0:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 0:   2%|▏         | 1/45 [00:00<00:16,  2.61it/s]Decoder 0:  98%|█████████▊| 44/45 [00:00<00:00, 118.08it/s]Decoder 0: 100%|██████████| 45/45 [00:00<00:00, 92.25it/s] 
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun9_dec0.pt | Total: 45 splines
+Decoder 1:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 1:  98%|█████████▊| 44/45 [00:00<00:00, 430.38it/s]Decoder 1: 100%|██████████| 45/45 [00:00<00:00, 429.86it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun9_dec1.pt | Total: 45 splines
+Decoder 2:   0%|          | 0/45 [00:00<?, ?it/s]Decoder 2:  96%|█████████▌| 43/45 [00:00<00:00, 427.87it/s]Decoder 2: 100%|██████████| 45/45 [00:00<00:00, 427.71it/s]
+[INFO] Saved: src/artifacts/ensemble/spline_ensemble_seed12_p10_rerun9_dec2.pt | Total: 45 splines

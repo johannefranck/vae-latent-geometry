@@ -7,10 +7,9 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader, random_split
-from src.vae_good import VAE
-from src.plotting import plot_latent_space
+from src.vae import VAE
 
-
+# single vae training
 def main():
     # ----- CONFIG -----
     with open("configs/config.yaml", "r") as f:
