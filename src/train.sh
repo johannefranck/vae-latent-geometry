@@ -24,5 +24,5 @@ mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
 
 export PYTHONPATH=$PWD:$PYTHONPATH
 
-# Run single decoder pipeline (batched)
+# Run ensemble with reruns
 python -m src.train_v101

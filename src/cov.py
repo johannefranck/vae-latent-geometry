@@ -23,19 +23,6 @@ def compute_cov(values):
     values = np.array(values)
     return float(values.std() / values.mean()) if values.mean() != 0 else float("inf")
 
-def remap_old_decoder_keys(state_dict):
-    new_state_dict = {}
-    for k, v in state_dict.items():
-        # If old key like 'decoder.0.xxx', turn into 'decoders.0.xxx'
-        if k.startswith("decoder.") and k[8].isdigit():
-            parts = k.split(".")
-            parts[0] = "decoders"
-            new_key = ".".join(parts)
-            new_state_dict[new_key] = v
-        else:
-            new_state_dict[k] = v
-    return new_state_dict
-
 
 def cov_mode_ensemble():
     set_seed(12)
@@ -47,15 +34,16 @@ def cov_mode_ensemble():
     save_dir = "models_v103/cov_results"
     latent_dim = 2
     decoder_counts = [1, 2, 3, 4, 5, 6]
-    reruns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # Reruns for each decoder count
+    reruns = list(range(10))
     n_poly = 4
+    batch_size = 500
 
     os.makedirs(save_dir, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data = torch.tensor(np.load(data_path), dtype=torch.float32).to(device)
     reps, pairs = load_pairs(pairfile)
-    t_vals = torch.linspace(0, 1, 2000, device=device)
+    t_vals = torch.linspace(0, 1, 200, device=device)
     basis, _ = construct_nullspace_basis(n_poly=n_poly, device=device)
 
     cov_geo = {d: [] for d in decoder_counts}
@@ -63,61 +51,68 @@ def cov_mode_ensemble():
 
     for num_decoders in decoder_counts:
         print(f"\nEvaluating CoV for {num_decoders} decoders")
+        all_euc = {tuple(p): [] for p in pairs}
+        all_geo = {tuple(p): [] for p in pairs}
 
-        for idx_a, idx_b in pairs:
-            geo_dists = []
-            euc_dists = []
+        # Accumulate all (a, b) for all reruns for batching
+        spline_jobs = []  # List of (a, b, pair_key)
 
-            for rerun in reruns:
-                model_path = Path(model_root) / f"dec{num_decoders}" / f"model_rerun{rerun}.pt"
-                model = EVAE(input_dim=50, latent_dim=latent_dim, num_decoders=num_decoders).to(device)
-                state = torch.load(model_path, map_location=device)
-                state = remap_old_decoder_keys(state)
-                model.load_state_dict(state)
+        for rerun in reruns:
+            model_path = Path(model_root) / f"dec{num_decoders}" / f"model_rerun{rerun}.pt"
+            model = EVAE(input_dim=50, latent_dim=latent_dim, num_decoders=num_decoders).to(device)
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            model.eval()
+            encoder = model.encoder
+            decoders = model.decoders
 
-                model.eval()
+            with torch.no_grad():
+                for idx_a, idx_b in pairs:
+                    z0 = encoder(data[idx_a].unsqueeze(0)).mean.squeeze(0)
+                    z1 = encoder(data[idx_b].unsqueeze(0)).mean.squeeze(0)
+                    euc = torch.norm(z0 - z1).item()
+                    all_euc[tuple((idx_a, idx_b))].append(euc)
+                    spline_jobs.append((z0, z1, (idx_a, idx_b), decoders))  # also carry decoders for now
 
-                print(model.decoders)  # <- should print 3 decoders
+        print(f"[{num_decoders} decoders] Total splines to optimize: {len(spline_jobs)}")
 
+        # === Optimize in batches ===
+        for i in range(0, len(spline_jobs), batch_size):
+            batch = spline_jobs[i:i+batch_size]
+            print(f"Optimizing splines {i} to {i + len(batch) - 1}")
 
-                with torch.no_grad():
-                    z0 = model.encoder(data[idx_a].unsqueeze(0)).mean.squeeze(0)
-                    z1 = model.encoder(data[idx_b].unsqueeze(0)).mean.squeeze(0)
+            a = torch.stack([job[0] for job in batch]).to(device)
+            b = torch.stack([job[1] for job in batch]).to(device)
+            omega_init = torch.zeros((len(batch), basis.shape[1], latent_dim), device=device)
+            decoders = batch[0][3]  # same across all jobs in batch
 
-                euc_dist = torch.norm(z0 - z1, p=2).item()
-                euc_dists.append(euc_dist)
+            _, lengths, _ = optimize_energy(
+                a, b, omega_init, basis, decoders,
+                n_poly=n_poly,
+                t_vals=t_vals,
+                steps=500,
+                lr=1e-3,
+                ensemble=True,
+                M=10
+            )
 
-                # a = z0.unsqueeze(0)
-                # b = z1.unsqueeze(0)
+            for (job, L) in zip(batch, lengths):
+                key = job[2]  # (idx_a, idx_b)
+                all_geo[tuple(key)].append(L.item())
 
-                # omega = torch.zeros((1, basis.shape[1], latent_dim), device=device)
-                # spline_init = GeodesicSplineBatch(a, b, basis, omega, n_poly)
+        # Compute CoV for each pair
+        for key in pairs:
+            cov_euc[num_decoders].append(compute_cov(all_euc[key]))
+            cov_geo[num_decoders].append(compute_cov(all_geo[key]))
 
-                # # NEED TO DO BATCHED OPTIMIZATION LIKE IN MAIN OF GEODESICS.py!
-
-                # spline_opt, lengths, _ = optimize_energy(
-                #     a, b, omega, basis, model.decoders,
-                #     n_poly=n_poly,
-                #     t_vals=t_vals,
-                #     steps=500,
-                #     lr=1e-3,
-                #     ensemble=True,
-                #     M=10
-                # )
-                # geo_dists.append(lengths[0].item())
-
-
-            cov_euc[num_decoders].append(compute_cov(euc_dists))
-            # cov_geo[num_decoders].append(compute_cov(geo_dists))
-
-    # Save results
-    # with open(Path(save_dir) / "cov_geodesic.json", "w") as f:
-    #     json.dump(cov_geo, f, indent=2)
+    with open(Path(save_dir) / "cov_geodesic.json", "w") as f:
+        json.dump(cov_geo, f, indent=2)
     with open(Path(save_dir) / "cov_euclidean.json", "w") as f:
         json.dump(cov_euc, f, indent=2)
 
     print("CoV results saved.")
     return cov_geo, cov_euc
+
+
 
 def plot_cov_results(cov_geo, cov_euc):
     geo_means = {int(k): np.mean(v) for k, v in cov_geo.items()}

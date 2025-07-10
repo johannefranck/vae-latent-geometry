@@ -106,8 +106,7 @@ def main():
     data_tensor = load_raw_data()
     input_dim = data_tensor.shape[1]
 
-    # === Optional: Train encoders ===
-    # Uncomment this block to retrain and overwrite encoders
+    # === Train encoders ===
     
     print("=== Step 1: Training encoders ===")
     os.makedirs(ENCODER_SOURCE_DIR, exist_ok=True)
