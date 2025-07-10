@@ -122,33 +122,83 @@ def compute_energy_ensemble(spline, decoder, t_vals, M=2):
 
     return total_energy / M
 
+# def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
+#     """
+#     Batched energy computation for B splines, using M ensemble samples per spline.
+#     Each spline gets its own decoder pair samples.
+#     """
+#     B = spline.a.shape[0]
+#     T = len(t_vals)
+#     D = spline.a.shape[1]
+#     device = t_vals.device
+
+#     z = spline(t_vals)  # (T, B, D)
+#     z_flat = z.view(T * B, D)
+
+#     total_energy = torch.zeros(B, device=device)
+#     rng = random.Random(456)
+
+#     for _ in range(M):
+#         d1_list = [rng.choice(decoders) for _ in range(B)]
+#         d2_list = [rng.choice(decoders) for _ in range(B)]
+
+#         X1 = torch.stack([d1(z_flat[i::B]).mean for i, d1 in enumerate(d1_list)], dim=1)  # (T, B, X)
+#         X2 = torch.stack([d2(z_flat[i::B]).mean for i, d2 in enumerate(d2_list)], dim=1)  # (T, B, X)
+
+#         diffs = X2[1:] - X1[:-1]
+#         total_energy += (diffs ** 2).sum(dim=2).sum(dim=0)
+
+#     return total_energy / M
+
+def standardize(x, eps=1e-5):
+    return (x - x.mean(dim=0, keepdim=True)) / (x.std(dim=0, keepdim=True) + eps)
+
+
+
 def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
     """
-    Batched energy computation for B splines, using M ensemble samples per spline.
-    Each spline gets its own decoder pair samples.
+    Optimized batched energy computation using vectorized decoder calls.
     """
     B = spline.a.shape[0]
     T = len(t_vals)
     D = spline.a.shape[1]
     device = t_vals.device
+    N_dec = len(decoders)
 
     z = spline(t_vals)  # (T, B, D)
-    z_flat = z.view(T * B, D)
+    z_flat = z.view(T * B, D)  # (TB, D)
+
+    # === Pre-decode all decoders once ===
+    # unscaled decoding
+    # decoded_all = torch.stack([
+    #     decoder(z_flat).mean.view(T, B, -1)  # (T, B, X)
+    #     for decoder in decoders
+    # ])  # (N_dec, T, B, X)
+    decoded_all = torch.stack([
+        standardize(decoder(z_flat).mean).view(T, B, -1)
+        for decoder in decoders
+    ])
+
 
     total_energy = torch.zeros(B, device=device)
-    rng = random.Random(456)
+    rng = torch.Generator(device=device).manual_seed(456)
 
     for _ in range(M):
-        d1_list = [rng.choice(decoders) for _ in range(B)]
-        d2_list = [rng.choice(decoders) for _ in range(B)]
+        d1_idx = torch.randint(N_dec, (B,), generator=rng, device=device)  # (B,)
+        d2_idx = torch.randint(N_dec, (B,), generator=rng, device=device)
 
-        X1 = torch.stack([d1(z_flat[i::B]).mean for i, d1 in enumerate(d1_list)], dim=1)  # (T, B, X)
-        X2 = torch.stack([d2(z_flat[i::B]).mean for i, d2 in enumerate(d2_list)], dim=1)  # (T, B, X)
+        # Index into (N_dec, T, B, X) using fancy indexing
+        t_idx = torch.arange(T, device=device).view(-1, 1)  # (T, 1)
+        b_idx = torch.arange(B, device=device).view(1, -1)  # (1, B)
 
-        diffs = X2[1:] - X1[:-1]
+        X1 = decoded_all[d1_idx, t_idx, b_idx]  # (T, B, X)
+        X2 = decoded_all[d2_idx, t_idx, b_idx]  # (T, B, X)
+
+        diffs = X2[1:] - X1[:-1]  # (T-1, B, X)
         total_energy += (diffs ** 2).sum(dim=2).sum(dim=0)
 
     return total_energy / M
+
 
 
 @torch.no_grad()
