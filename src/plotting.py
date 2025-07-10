@@ -125,7 +125,7 @@ from src.geodesics import (
 )
 
 
-def plot_cov_results(cov_geo, cov_euc):
+def plot_cov_results(cov_geo, cov_euc, pairs=10):
     geo_means = {int(k): np.mean(v) for k, v in cov_geo.items()}
     euc_means = {int(k): np.mean(v) for k, v in cov_euc.items()}
 
@@ -142,8 +142,8 @@ def plot_cov_results(cov_geo, cov_euc):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig("models_v103/cov_results/CoV_plot.png")
-    print("Saved plot to models_v103/cov_results/CoV_plot.png")
+    plt.savefig(f"models_p{pairs}/cov_results/CoV_plot.png")
+    print(f"Saved plot to models_p{pairs}/cov_results/CoV_plot.png")
 
 def plot_latents_from_reruns(
     model_root="models_v103",
@@ -152,7 +152,7 @@ def plot_latents_from_reruns(
     reruns=range(10),
     num_decoders=6,
     latent_dim=2,
-    save_path="models_v103/results/latent_encodings_by_rerun.png"
+    save_path="models_p10/results/latent_encodings_by_rerun.png"
 ):
     import seaborn as sns
 
@@ -297,7 +297,7 @@ def build_distance_matrices(
     np.fill_diagonal(D_geo, 0.0)
     np.fill_diagonal(D_euc, 0.0)
 
-    vmax = max(np.nanmax(D_geo), np.nanmax(D_euc))
+    # vmax = max(np.nanmax(D_geo), np.nanmax(D_euc))
 
     def plot_matrix(D, title, path):
         plt.figure(figsize=(12, 12))
@@ -310,7 +310,7 @@ def build_distance_matrices(
             yticklabels=cluster_ids,
             cbar=False,
             vmin=0,
-            vmax=vmax  # makes color scales consistent
+            # vmax=vmax  # wrong! johanne stupido
         )
         plt.xticks(rotation=90, fontsize=3)
         plt.yticks(rotation=0, fontsize=3)

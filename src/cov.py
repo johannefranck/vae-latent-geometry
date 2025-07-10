@@ -29,19 +29,20 @@ def compute_cov(values):
     values = np.array(values)
     return float(values.std() / values.mean()) if values.mean() != 0 else float("inf")
 
-def cov_mode_ensemble():
+def cov_mode_ensemble(pairs=10, num_decoders=6):
     set_seed(12)
 
     # --- CONFIG ---
-    pairfile = "src/artifacts/selected_pairs_10.json"
+    pairfile = f"src/artifacts/selected_pairs_{pairs}.json"
     data_path = "data/tasic-pca50.npy"
     model_root = "models_v103"
-    save_dir = "models_v103/cov_results"
+    model_save_dir = f"models_p{pairs}"
+    save_dir = f"{model_save_dir}/cov_results"
     latent_dim = 2
-    decoder_counts = [1, 2, 3, 4, 5, 6]
+    decoder_counts = list(range(1, num_decoders + 1))  # [1, 2, ..., num_decoders]
     reruns = list(range(10))
     n_poly = 4
-    batch_size = 100
+    batch_size = 200
     n_segments = 1000 # segments pr spline, t discretization
     os.makedirs(save_dir, exist_ok=True)
 
@@ -62,7 +63,7 @@ def cov_mode_ensemble():
         spline_data = []
 
         # --- Store spline jobs per rerun ---
-        all_spline_jobs = dict()  # rerun → (spline_jobs, decoders)
+        all_spline_jobs = dict()  # rerun (spline_jobs, decoders)
 
         for rerun in reruns:
             print(f"Rerun {rerun} for {num_decoders} decoders")
@@ -98,7 +99,7 @@ def cov_mode_ensemble():
                     spline_model, lengths, omega_opt = optimize_energy(
                         a, b, omega_init, basis, decoders,
                         n_poly=n_poly, t_vals=t_vals,
-                        steps=1000, lr=1e-3, ensemble=True, M=10
+                        steps=5000, lr=1e-2, ensemble=True, M=5
                     )
                 except RuntimeError as e:
                     if "out of memory" in str(e):
@@ -136,8 +137,8 @@ def cov_mode_ensemble():
                 del a, b, omega_init, lengths, omega_opt
                 torch.cuda.empty_cache()
 
-        Path("models_v103/results").mkdir(parents=True, exist_ok=True)
-        with open(f"models_v103/results/splines_dec{num_decoders}.json", "w") as f:
+        Path(f"{model_save_dir}/results").mkdir(parents=True, exist_ok=True)
+        with open(f"{model_save_dir}/results/splines_dec{num_decoders}.json", "w") as f:
             json.dump(spline_data, f)
 
     # === Aggregate and compute CoV ===
@@ -164,36 +165,39 @@ def cov_mode_ensemble():
 
 
 if __name__ == "__main__":
-    # cov_geo, cov_euc = cov_mode_ensemble()
-    # plot_cov_results(cov_geo, cov_euc)
+    pairs = 50 # corresponds to selected_pairs_10.json, choose 10,50,100,133
+    rerun = 0
+    num_decoders = 6
+    model_save_dir = f"models_p{pairs}"
 
-    # build_distance_matrices(
-    #     spline_json_path="models_v103/results/splines_dec6.json",
-    #     rerun=0,
-    #     num_decoders=6,
-    #     cluster_map_path="src/artifacts/selected_pairs_10.json",
-    #     plot_path_geo="models_v103/results/geo_matrix_dec6_rerun0.png",
-    #     plot_path_euc="models_v103/results/euc_matrix_dec6_rerun0.png",
-    #     json_out_path="models_v103/results/distances_dec6_rerun0.json"
-    # )
+    cov_geo, cov_euc = cov_mode_ensemble(pairs=pairs)
+    plot_cov_results(cov_geo, cov_euc, pairs=pairs)
+
+    build_distance_matrices(
+        spline_json_path=f"{model_save_dir}/results/splines_dec{num_decoders}.json",
+        rerun=rerun,
+        num_decoders=num_decoders,
+        cluster_map_path=f"src/artifacts/selected_pairs_{pairs}.json",
+        plot_path_geo=f"{model_save_dir}/results/geo_matrix_dec{num_decoders}_rerun{rerun}.png",
+        plot_path_euc=f"{model_save_dir}/results/euc_matrix_dec{num_decoders}_rerun{rerun}.png",
+        json_out_path=f"{model_save_dir}/results/distances_dec{num_decoders}_rerun{rerun}.json"
+    )
 
     # plot_latents_from_reruns(
     #     model_root="models_v103",
     #     data_path="data/tasic-pca50.npy",
     #     label_path="data/tasic-ttypes.npy",
     #     reruns=range(10),
-    #     num_decoders=3,
-    #     save_path="models_v103/results/latent_encodings_by_rerun.png"
+    #     num_decoders=num_decoders,
+    #     save_path=f"{model_save_dir}/results/latent_encodings_by_rerun{rerun}.png"
     # )
 
-    rerun = 0
-    num_decoders = 6
     plot_latent_geodesics_from_saved_splines(
         model_path=f"models_v103/dec{num_decoders}/model_rerun{rerun}.pt",
-        spline_path=f"models_v103/results/splines_dec{num_decoders}.json",
+        spline_path=f"{model_save_dir}/results/splines_dec{num_decoders}.json",
         data_path="data/tasic-pca50.npy",
-        pairfile="src/artifacts/selected_pairs_10.json",
-        save_path=f"models_v103/results/latent_geodesics_r{rerun}_dec{num_decoders}.png",
+        pairfile=f"src/artifacts/selected_pairs_{pairs}.json",
+        save_path=f"{model_save_dir}/results/latent_geodesics_r{rerun}_dec{num_decoders}.png",
         num_decoders=num_decoders,
         max_pairs=5
     )
