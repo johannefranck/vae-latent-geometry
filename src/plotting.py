@@ -125,7 +125,7 @@ from src.geodesics import (
 )
 
 
-def plot_cov_results(cov_geo, cov_euc, pairs=10):
+def plot_cov_results(cov_geo, cov_euc, model_save_dir=None):
     geo_means = {int(k): np.mean(v) for k, v in cov_geo.items()}
     euc_means = {int(k): np.mean(v) for k, v in cov_euc.items()}
 
@@ -142,8 +142,8 @@ def plot_cov_results(cov_geo, cov_euc, pairs=10):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(f"models_p{pairs}/cov_results/CoV_plot.png")
-    print(f"Saved plot to models_p{pairs}/cov_results/CoV_plot.png")
+    plt.savefig(f"{model_save_dir}/cov_results/CoV_plot.png")
+    print(f"Saved plot to {model_save_dir}/cov_results/CoV_plot.png")
 
 def plot_latents_from_reruns(
     model_root="models_v103",
@@ -259,6 +259,11 @@ def build_distance_matrices(
     plot_path_euc: str,
     json_out_path: str
 ) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+    """
+    Build geodesic and euclidean distance matrices from spline data.
+    Note the geodesic distances and euclidean distances are not directly comparable,
+    as they are computed in different spaces.
+    """
     Path(plot_path_geo).parent.mkdir(parents=True, exist_ok=True)
     Path(plot_path_euc).parent.mkdir(parents=True, exist_ok=True)
     Path(json_out_path).parent.mkdir(parents=True, exist_ok=True)
@@ -297,8 +302,6 @@ def build_distance_matrices(
     np.fill_diagonal(D_geo, 0.0)
     np.fill_diagonal(D_euc, 0.0)
 
-    # vmax = max(np.nanmax(D_geo), np.nanmax(D_euc))
-
     def plot_matrix(D, title, path):
         plt.figure(figsize=(12, 12))
         sns.heatmap(
@@ -310,7 +313,6 @@ def build_distance_matrices(
             yticklabels=cluster_ids,
             cbar=False,
             vmin=0,
-            # vmax=vmax  # wrong! johanne stupido
         )
         plt.xticks(rotation=90, fontsize=3)
         plt.yticks(rotation=0, fontsize=3)
@@ -321,7 +323,7 @@ def build_distance_matrices(
         plt.savefig(path, dpi=300)
         plt.close()
 
-    print(f"Plotting geodesic and euclidean distance matrices to {plot_path_geo} and {plot_path_euc}")
+    print(f"Plotting geodesic and euclidean distance matrices to {plot_path_geo} and\n{plot_path_euc}")
 
     plot_matrix(D_geo, f"Geodesic Distance Matrix - rerun {rerun}, dec {num_decoders}", plot_path_geo)
     plot_matrix(D_euc, f"Euclidean Distance Matrix - rerun {rerun}, dec {num_decoders}", plot_path_euc)

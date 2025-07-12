@@ -1,22 +1,11 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import argparse
-import json
 import random
-from pathlib import Path
 from scipy.spatial import KDTree
 from scipy.sparse import lil_matrix
 
-from src.vae import VAE
 from src.single_decoder.optimize_energy import construct_nullspace_basis
 
-
-def set_seed(seed=12):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.use_deterministic_algorithms(True)
-    torch.backends.cudnn.benchmark = False
 
 
 class GeodesicSplineBatch(nn.Module):
@@ -39,6 +28,8 @@ class GeodesicSplineBatch(nn.Module):
         poly = torch.einsum("ti,tibd->tbd", powers, coeffs_selected)
         linear = (1 - t[:, None, None]) * self.a[None] + t[:, None, None] * self.b[None]
         return linear + poly
+
+
 
 # ====== INITIALIZE SPLINES AND GRID CREATION ======
 def create_latent_grid_from_data(latents, n_points_per_axis=150, margin=0.1):
@@ -100,63 +91,9 @@ def compute_energy(spline, decoder, t_vals):
     diffs = x[1:] - x[:-1]
     return (diffs**2).sum(dim=2).sum(dim=0)
 
-
-def compute_energy_ensemble(spline, decoder, t_vals, M=2):
-    B = spline.a.shape[0]
-    T = len(t_vals)
-    D = spline.a.shape[1]
-    device = t_vals.device
-
-    z = spline(t_vals)  # (T, B, D)
-    z_flat = z.view(T * B, D)
-
-    total_energy = torch.zeros(B, device=device)
-    rng = random.Random(456)  # fixed seed
-    for _ in range(M):
-        # DO NOT DISABLE GRADIENT HERE!
-        d1, d2 = rng.choice(decoder), rng.choice(decoder)
-        X1 = d1(z_flat).mean.view(T, B, -1)  # decoder returns distribution
-        X2 = d2(z_flat).mean.view(T, B, -1)
-        diffs = X2[1:] - X1[:-1]
-        total_energy += (diffs ** 2).sum(dim=2).sum(dim=0)
-
-    return total_energy / M
-
-# def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
-#     """
-#     Batched energy computation for B splines, using M ensemble samples per spline.
-#     Each spline gets its own decoder pair samples.
-#     """
-#     B = spline.a.shape[0]
-#     T = len(t_vals)
-#     D = spline.a.shape[1]
-#     device = t_vals.device
-
-#     z = spline(t_vals)  # (T, B, D)
-#     z_flat = z.view(T * B, D)
-
-#     total_energy = torch.zeros(B, device=device)
-#     rng = random.Random(456)
-
-#     for _ in range(M):
-#         d1_list = [rng.choice(decoders) for _ in range(B)]
-#         d2_list = [rng.choice(decoders) for _ in range(B)]
-
-#         X1 = torch.stack([d1(z_flat[i::B]).mean for i, d1 in enumerate(d1_list)], dim=1)  # (T, B, X)
-#         X2 = torch.stack([d2(z_flat[i::B]).mean for i, d2 in enumerate(d2_list)], dim=1)  # (T, B, X)
-
-#         diffs = X2[1:] - X1[:-1]
-#         total_energy += (diffs ** 2).sum(dim=2).sum(dim=0)
-
-#     return total_energy / M
-
-def standardize(x, eps=1e-5):
-    return (x - x.mean(dim=0, keepdim=True)) / (x.std(dim=0, keepdim=True) + eps)
-
-
 def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
     """
-    Optimized batched energy computation with decoder output normalization.
+    Optimized batched energy computation with sampling decoder pairs from ensemble.
     """
     B = spline.a.shape[0]
     T = len(t_vals)
@@ -175,24 +112,23 @@ def compute_energy_ensemble_batched(spline, decoders, t_vals, M=2):
     decoded_all = torch.stack(decoded_all)  # (N_dec, T, B, X)
 
     total_energy = torch.zeros(B, device=device)
-    rng = torch.Generator(device=device).manual_seed(456)
 
+    if N_dec == 1:
+        return compute_energy(spline, decoders[0], t_vals)
     for _ in range(M):
-        d1_idx = torch.randint(N_dec, (B,), generator=rng, device=device)
-        d2_idx = torch.randint(N_dec, (B,), generator=rng, device=device)
+        decoder_1 = random.choice(decoders)
+        decoder_2 = random.choice(decoders)
 
-        t_idx = torch.arange(T, device=device).view(-1, 1)  # (T, 1)
-        b_idx = torch.arange(B, device=device).view(1, -1)  # (1, B)
+        x1 = decoder_1(z_flat).mean.view(T, B, -1)
+        x2 = decoder_2(z_flat).mean.view(T, B, -1)
 
-        X1 = decoded_all[d1_idx, t_idx, b_idx]  # (T, B, X)
-        X2 = decoded_all[d2_idx, t_idx, b_idx]
-
-        diffs = X2[1:] - X1[:-1]  # (T-1, B, X)
+        diffs = x2[1:] - x1[:-1]
         total_energy += (diffs ** 2).sum(dim=2).sum(dim=0)
 
     return total_energy / M
 
 
+# Lengths
 
 @torch.no_grad()
 def compute_geodesic_lengths(spline, decoder, t_vals):
@@ -206,29 +142,31 @@ def compute_geodesic_lengths(spline, decoder, t_vals):
 
 @torch.no_grad()
 def compute_geodesic_lengths_ensemble(spline, decoders, t_vals, M=3):
+    """
+    Estimate geodesic lengths by integrating speed over the curve using
+    samples from the decoder ensemble. Each sample uses one fixed decoder.
+    """
     B = spline.a.shape[0]
     T = len(t_vals)
     D = spline.a.shape[1]
     device = t_vals.device
-    N_dec = len(decoders)
-    dt = 1.0 / (T - 1)  # Add dt for proper arc length
+    dt = 1.0 / (T - 1)
 
     z = spline(t_vals)  # (T, B, D)
     z_flat = z.view(T * B, D)
 
     lengths = torch.zeros(B, device=device)
-    rng = torch.Generator(device=device).manual_seed(456)
 
     for _ in range(M):
-        d1_idx = torch.randint(N_dec, (1,), generator=rng, device=device).item()
-        decoder = decoders[d1_idx]
-        x = decoder(z_flat).mean.view(T, B, -1)
-        diffs = x[1:] - x[:-1]
-        lengths += torch.norm(diffs, dim=2).sum(dim=0) * dt  # dt scaled
+        decoder = random.choice(decoders)  # Sample one decoder
+        x = decoder(z_flat).mean.view(T, B, -1)  # (T, B, X)
+        diffs = x[1:] - x[:-1]  # (T-1, B, X)
+        lengths += torch.norm(diffs, dim=2).sum(dim=0) * dt
 
     return (lengths / M).cpu()
 
 
+# ====== OPTIMIZATION FUNCTION ======
 
 def optimize_energy(
     a, b, omega_init, basis, decoders, n_poly, t_vals,
@@ -241,7 +179,7 @@ def optimize_energy(
     for step in range(steps):
         optimizer.zero_grad()
         if ensemble:
-            energy = compute_energy_ensemble_batched(model, decoders, t_vals, M)
+            energy = compute_energy_ensemble_batched(model, decoders, t_vals, M = M)
         else:
             energy = compute_energy(model, decoders, t_vals)
 
@@ -252,8 +190,7 @@ def optimize_energy(
         if step % 50 == 0:
             print(f"[Step {step}] Energy: {energy.mean():.4f}")
 
-        # Early stopping condition if no improvement in last 50 steps
-
+        # Early stopping??
 
     if ensemble:
         final_decoder = decoders
@@ -264,72 +201,3 @@ def optimize_energy(
     return model, lengths, model.omega.detach()
 
 
-
-def main():
-    set_seed(12)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--pairfile", type=str, required=True)
-    parser.add_argument("--batch_size", type=int, default=5000)
-    parser.add_argument("--ensemble", action="store_true", help="Enable ensemble decoding")
-    args = parser.parse_args()
-
-    seed = args.seed
-    pair_tag = Path(args.pairfile).stem.replace("selected_pairs_", "")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.manual_seed(seed)
-    torch.set_default_dtype(torch.float32)
-
-    spline_path = f"src/artifacts/spline_batch_seed{seed}_p{pair_tag}.pt"
-    model_path = f"src/artifacts/vae_best_seed{seed}.pth"
-    output_path = f"src/artifacts/optimized_geodesics_seed{seed}_p{pair_tag}.pt"
-
-    vae = VAE(input_dim=50, latent_dim=2).to(device)
-    vae.load_state_dict(torch.load(model_path, map_location=device))
-    vae.eval()
-    decoders = list(vae.decoder) if args.ensemble else vae.decoder
-
-    spline_data = torch.load(spline_path, map_location=device)["spline_data"]
-    n_poly = spline_data[0]["n_poly"]
-    basis, _ = construct_nullspace_basis(n_poly=n_poly, device=device)
-    t_vals = torch.linspace(0, 1, 200, device=device)
-
-    all_outputs = []
-    for start in range(0, len(spline_data), args.batch_size):
-        end = min(start + args.batch_size, len(spline_data))
-        chunk = spline_data[start:end]
-        print(f"Optimizing splines {start} to {end - 1}")
-
-        a = torch.stack([d["a"] for d in chunk]).to(device)
-        b = torch.stack([d["b"] for d in chunk]).to(device)
-        omega = torch.stack([d["omega_init"] for d in chunk]).to(device)
-        cluster_pairs = [(d["a_label"], d["b_label"]) for d in chunk]
-
-        model, lengths, omega_optimized = optimize_energy(
-            a, b, omega, basis, decoders, n_poly, t_vals,
-            ensemble=args.ensemble, M=10
-        )
-
-        for i in range(len(chunk)):
-            all_outputs.append({
-                "a": a[i].cpu(),
-                "b": b[i].cpu(),
-                "cluster_pair": cluster_pairs[i],
-                "n_poly": n_poly,
-                "basis": basis.cpu(),
-                "omega_init": omega[i].cpu(),
-                "omega_optimized": omega_optimized[i].cpu(),
-                "length_geodesic": lengths[i].item(),
-                "length_euclidean": torch.norm(a[i] - b[i]).item(),
-            })
-
-        del a, b, omega, model
-        torch.cuda.empty_cache()
-
-    torch.save(all_outputs, output_path)
-    print(f"Saved to {output_path}")
-
-
-if __name__ == "__main__":
-    main()

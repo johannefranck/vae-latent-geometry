@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J train_epoch200
+#BSUB -J train101_200
 #BSUB -q gpua100
 #BSUB -W 09:00
 #BSUB -n 1
