@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import colormaps
+from src.select_representative_pairs import load_pairs
 
 
 
@@ -187,9 +188,66 @@ def plot_initialized_splines(latents, spline_data, basis, representatives, save_
     plt.close()
 
 
+import matplotlib.cm as cm
+from src.single_decoder.optimize_energy import GeodesicSpline
+import torch.nn as nn
+
+def plot_initial_and_optimized_splines(spline_path, latents, save_path, device="cpu"):
+    """
+    Plot both initial and optimized splines from a saved file.
+    (default only plots the first 5 splines for clarity)
+
+    Args:
+        spline_path (str or Path): Path to the saved optimized spline file (must include init+opt omegas).
+        latents (np.ndarray): 2D latent positions (N, 2).
+        save_path (str or Path): Where to save the plot.
+        device (str or torch.device): CUDA or CPU.
+    """
+    # Load data
+    data = torch.load(spline_path, map_location=device)
+    spline_data = data["spline_data"][:5] # visualizing some of the splines
+    n_poly = spline_data[0]["n_poly"]
+    basis = spline_data[0]["basis"].to(device)
+
+    # Plot setup
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(latents[:, 0], latents[:, 1], s=2, color="lightgray", alpha=0.5)
+
+    t_vals = torch.linspace(0, 1, 300, device=device)
+    colors = cm.tab10(np.linspace(0, 1, len(spline_data)))
+
+    for i, d in enumerate(spline_data):
+        color = colors[i % len(colors)]
+        a = d["a"].to(device)
+        b = d["b"].to(device)
+
+        # Initial spline
+        omega_init = d["omega_init"].to(device)
+        spline_init = GeodesicSpline((a, b), basis, n_poly)
+        spline_init.omega = nn.Parameter(omega_init)
+        z_init = spline_init(t_vals).detach().cpu().numpy()
+        ax.plot(z_init[:, 0], z_init[:, 1], '--', linewidth=1.0, color=color, alpha=0.6)
+
+        # Optimized spline
+        omega_opt = d.get("omega_optimized")
+        if omega_opt is not None:
+            omega_opt = omega_opt.to(device)
+            spline_opt = GeodesicSpline((a, b), basis, n_poly)
+            spline_opt.omega = nn.Parameter(omega_opt)
+            z_opt = spline_opt(t_vals).detach().cpu().numpy()
+            ax.plot(z_opt[:, 0], z_opt[:, 1], '-', linewidth=2.0, color=color)
+
+    ax.set_aspect("equal")
+    ax.set_title("Initial (dashed) and Optimized (solid) Geodesic Splines")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+    print(f"[✓] Saved initial+optimized spline plot to: {save_path}")
 
 
 
+
+# -------- old not used for current experiments -----------
 
 import json
 import numpy as np

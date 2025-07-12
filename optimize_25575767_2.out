@@ -1,0 +1,9 @@
+Loaded module: cuda/11.7
+Running optimization for model_seed12.pt with euclidean init
+[INFO] Device: cuda
+[INFO] Automatically using spline: experiment/splines_init_model_seed12/spline_batch_init_euclidean_133.pt
+[DEBUG] Loaded model: experiment/model_seed12.pt
+[CHECK] All decoders identical? False
+Decoders are (at least slightly) diverse.
+[INFO] Optimizing 8777 splines (n_poly=4, K=5)
+Batched optimization:   0%|          | 0/44 [00:00<?, ?it/s]Batched optimization:   2%|▏         | 1/44 [00:02<01:45,  2.46s/it]Batched optimization:   5%|▍         | 2/44 [00:04<01:28,  2.10s/it]Batched optimization:   7%|▋         | 3/44 [00:06<01:20,  1.96s/it]Batched optimization:   9%|▉         | 4/44 [00:07<01:16,  1.91s/it]Batched optimization:  11%|█▏        | 5/44 [00:09<01:13,  1.88s/it]Batched optimization:  14%|█▎        | 6/44 [00:11<01:10,  1.86s/it]Batched optimization:  16%|█▌        | 7/44 [00:13<01:08,  1.85s/it]Batched optimization:  18%|█▊        | 8/44 [00:15<01:06,  1.84s/it]Batched optimization:  20%|██        | 9/44 [00:17<01:04,  1.83s/it]Batched optimization:  23%|██▎       | 10/44 [00:18<01:02,  1.84s/it]Batched optimization:  25%|██▌       | 11/44 [00:20<01:00,  1.83s/it]Batched optimization:  27%|██▋       | 12/44 [00:22<00:58,  1.83s/it]Batched optimization:  30%|██▉       | 13/44 [00:24<00:56,  1.83s/it]Batched optimization:  32%|███▏      | 14/44 [00:26<00:54,  1.83s/it]Batched optimization:  34%|███▍      | 15/44 [00:28<00:53,  1.83s/it]
