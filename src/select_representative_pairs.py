@@ -43,6 +43,11 @@ def save_pairs(representatives, path):
         json.dump(data, f, indent=2)
     print(f"Saved {len(pairs)} pairs from {len(representatives)} representatives to {path}")
 
+def load_pairs(path="src/artifacts/selected_pairs.json"):
+    with open(path, "r") as f:
+        data = json.load(f)
+    return data["representatives"], data["pairs"]
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-type", choices=["vae", "evae"], required=True, help="Type of model: vae or evae")

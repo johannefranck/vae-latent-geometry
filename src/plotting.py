@@ -110,6 +110,87 @@ def plot_latent_density_with_splines(latents, labels, splines, res=300, seed=12,
 
 
 # for ensembles
+import matplotlib.pyplot as plt
+import torch
+import numpy as np
+import json
+
+def plot_latents_with_selected(model, data_tensor, selected_indices_path, save_path=None, device="cpu"):
+    model.eval()
+    with torch.no_grad():
+        z = model.encoder(data_tensor.to(device)).base_dist.loc.cpu().numpy()
+
+    # Load selected indices
+    with open(selected_indices_path, "r") as f:
+        selected = json.load(f)
+    selected_inds = [rep["index"] for rep in selected["representatives"]]
+    pairs = selected["pairs"]
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(7, 7))
+    ax.scatter(z[:, 0], z[:, 1], s=5, alpha=0.4, label="All data")
+
+    selected_z = z[selected_inds]
+    ax.scatter(selected_z[:, 0], selected_z[:, 1], c="red", s=30, label="Selected points", edgecolors="black")
+
+    for i, (x, y) in enumerate(selected_z):
+        ax.annotate(str(i), (x, y), fontsize=8, color="black", xytext=(3, 3), textcoords="offset points")
+
+    ax.set_xlabel("z₁")
+    ax.set_ylabel("z₂")
+    ax.set_title("Latent space with selected representatives")
+    ax.set_aspect("equal")
+    ax.legend()
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"Saved latent plot with selected points to: {save_path}")
+    else:
+        plt.show()
+
+
+def plot_initialized_splines(latents, spline_data, basis, representatives, save_path, device="cpu"):
+    """
+    Plot latent space with initialized splines and selected cluster centers.
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+    from src.single_decoder.optimize_energy import GeodesicSpline
+    import torch.nn as nn
+    import numpy as np
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(latents[:, 0], latents[:, 1], s=2, color="lightgray", alpha=0.5)
+
+    colors = cm.tab20(np.linspace(0, 1, len(spline_data)))
+    t_vis = torch.linspace(0, 1, 300, device=device)
+
+    for i, data in enumerate(spline_data):
+        spline = GeodesicSpline(
+            (data["a"].to(device), data["b"].to(device)),
+            basis.to(device),
+            n_poly=data["n_poly"]
+        )
+        spline.omega = nn.Parameter(data["omega_init"].to(device))
+        z = spline(t_vis).detach().cpu().numpy()
+        ax.plot(z[:, 0], z[:, 1], '-', color=colors[i % len(colors)], linewidth=1.5)
+
+    rep_zs = latents[[r["index"] for r in representatives]]
+    ax.scatter(rep_zs[:, 0], rep_zs[:, 1], s=20, color="black", zorder=3)
+
+    ax.set_title("Initialized Geodesic Splines")
+    ax.axis("equal")
+    ax.grid(True)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+
+
+
+
+
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -118,7 +199,7 @@ from pathlib import Path
 from typing import Tuple, List
 
 from src.vae import EVAE
-from src.select_representative_pairs import load_pairs
+# from src.select_representative_pairs import load_pairs
 from src.geodesics import (
     GeodesicSplineBatch,
     construct_nullspace_basis,
