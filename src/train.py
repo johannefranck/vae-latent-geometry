@@ -37,12 +37,13 @@ class GaussianDecoder(nn.Module):
     def __init__(self, decoder_net):
         super().__init__()
         self.decoder_net = decoder_net
-        self.log_scale = nn.Parameter(torch.tensor(0.0))  # Learnable log std
+        # self.log_scale = nn.Parameter(torch.tensor(0.0))  # Learnable log std
 
     def forward(self, z):
         mean = self.decoder_net(z)
-        scale = torch.exp(self.log_scale)
-        return td.Independent(td.Normal(mean, scale), 1)
+        # scale = torch.exp(self.log_scale)
+        # return td.Independent(td.Normal(mean, scale), 1)
+        return td.Independent(td.Normal(mean, 5), 1)
 
 class EVAE(nn.Module):
     def __init__(self, prior, encoder, decoder, num_decoders, beta=1.0):
