@@ -195,7 +195,7 @@ import torch.nn as nn
 def plot_initial_and_optimized_splines(spline_path, latents, save_path, device="cpu"):
     """
     Plot both initial and optimized splines from a saved file.
-    (default only plots the first 5 splines for clarity)
+    (default only plots the first 10 splines for clarity)
 
     Args:
         spline_path (str or Path): Path to the saved optimized spline file (must include init+opt omegas).
@@ -205,7 +205,7 @@ def plot_initial_and_optimized_splines(spline_path, latents, save_path, device="
     """
     # Load data
     data = torch.load(spline_path, map_location=device)
-    spline_data = data["spline_data"][:5] # visualizing some of the splines
+    spline_data = data["spline_data"][:10] # visualizing some of the splines
     n_poly = spline_data[0]["n_poly"]
     basis = spline_data[0]["basis"].to(device)
 
@@ -258,7 +258,7 @@ from typing import Tuple, List
 
 from src.vae import EVAE
 # from src.select_representative_pairs import load_pairs
-from src.geodesics import (
+from src.init_splines_ensemble import (
     GeodesicSplineBatch,
     construct_nullspace_basis,
 )

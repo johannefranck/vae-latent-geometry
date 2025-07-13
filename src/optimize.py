@@ -5,7 +5,6 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
-import random
 
 from src.train import EVAE, GaussianEncoder, GaussianDecoder, GaussianPrior, make_encoder_net, make_decoder_net
 from src.single_decoder.optimize_energy import construct_nullspace_basis
@@ -102,6 +101,7 @@ def main(model_path, spline_path, init_type, pair_count, steps=500, batch_size=2
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     decoders = list(model.decoder)
+    decoders = [d.to(device) for d in decoders]
     print(f"[DEBUG] Loaded model: {model_path}")
 
     # === Check if decoders are identical ===

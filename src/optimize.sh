@@ -28,7 +28,7 @@ echo "Running optimization for $model with $init init"
 python -m src.optimize \
   --model-path experiment/$model \
   --init-type $init \
-  --pair-count 133 \
-  --steps 1000 \
-  --batch-size 1000 \
+  --pair-count 10 \
+  --steps 2000 \
+  --batch-size 500 \
   --mc-samples 2

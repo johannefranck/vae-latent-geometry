@@ -116,7 +116,7 @@ def train_model(model, optimizer, train_loader, val_loader, epochs, device, save
     plt.xlabel("Epoch")
     plt.ylabel("Neg ELBO")
     plt.title("Training Curve")
-    plt.savefig(f"{save_dir}/loss_curve_seed{seed}.png")
+    plt.savefig(f"{save_dir}/plots/loss_curve_seed{seed}.png")
     plt.close()
 
 # ----------------------------
@@ -159,8 +159,8 @@ def main():
 
     # Save model + decoder weights
     torch.save(model.state_dict(), f"{args.save_dir}/model_seed{args.seed}.pt")
-    for i, dec in enumerate(model.decoder):
-        torch.save(dec.state_dict(), f"{args.save_dir}/decoder_{i}_seed{args.seed}.pt")
+    # for i, dec in enumerate(model.decoder):
+    #     torch.save(dec.state_dict(), f"{args.save_dir}/decoder_{i}_seed{args.seed}.pt")
 
     print(f"\nSaved model + {args.num_decoders} decoders.")
 

@@ -21,7 +21,7 @@ def set_seed(seed=12):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-set_seed(12)  
+# set_seed(12)  
 
 
 class GeodesicSpline(nn.Module):
@@ -259,7 +259,6 @@ if __name__ == "__main__":
     plt.title(f"Optimized Geodesic Splines ({len(spline_batch)} total)")
     plt.axis("equal")
     plt.grid(True)
-    # plt.legend()
     plt.tight_layout()
     plt.savefig(out_plot_path, dpi=300)
     torch.save(optimized_batch, out_data_path)

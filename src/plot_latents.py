@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--color-path", type=str, default="data/tasic-colors.npy")
     parser.add_argument("--latent-dim", type=int, default=2)
     parser.add_argument("--num-decoders", type=int, default=10)
-    parser.add_argument("--save-path", type=str, default="latent_plot_uncertainty.png")
+    parser.add_argument("--save-path", type=str, default="experiment/plots/latent_plot_uncertainty.png")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--resolution", type=int, default=100)
     args = parser.parse_args()
