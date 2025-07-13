@@ -1,0 +1,200 @@
+Loaded module: cuda/11.7
+Running optimization for model_seed123.pt with entropy init
+[INFO] Device: cuda
+[INFO] Automatically using spline: experiment/splines_init_model_seed123/spline_batch_init_entropy_133.pt
+[DEBUG] Loaded model: experiment/model_seed123.pt
+[CHECK] All decoders identical? False
+Decoders are (at least slightly) diverse.
+[INFO] Optimizing 8776 splines (n_poly=4, K=5)
+Batched optimization:   0%|          | 0/9 [00:00<?, ?it/s]Batched optimization:  11%|█         | 1/9 [09:32<1:16:21, 572.75s/it]Batched optimization:  22%|██▏       | 2/9 [19:05<1:06:48, 572.70s/it]Batched optimization:  33%|███▎      | 3/9 [28:38<57:17, 572.87s/it]  Batched optimization:  44%|████▍     | 4/9 [38:11<47:43, 572.77s/it]Batched optimization:  56%|█████▌    | 5/9 [47:43<38:10, 572.72s/it]Batched optimization:  67%|██████▋   | 6/9 [57:16<28:38, 572.76s/it]Batched optimization:  78%|███████▊  | 7/9 [1:06:49<19:05, 572.76s/it]Batched optimization:  89%|████████▉ | 8/9 [1:16:22<09:32, 572.80s/it]Batched optimization: 100%|██████████| 9/9 [1:23:46<00:00, 532.76s/it]Batched optimization: 100%|██████████| 9/9 [1:23:46<00:00, 558.55s/it]
+[BATCH] Batch 1/9: optimizing splines [0:1000]
+[Step 0] Mean Energy: 190902.0625
+[Step 50] Mean Energy: 184525.5625
+[Step 100] Mean Energy: 179526.4219
+[Step 150] Mean Energy: 175376.0469
+[Step 200] Mean Energy: 171357.9062
+[Step 250] Mean Energy: 167835.5625
+[Step 300] Mean Energy: 164628.4531
+[Step 350] Mean Energy: 161698.5625
+[Step 400] Mean Energy: 158948.4531
+[Step 450] Mean Energy: 156460.9844
+[Step 500] Mean Energy: 154098.4219
+[Step 550] Mean Energy: 152006.8906
+[Step 600] Mean Energy: 150043.2656
+[Step 650] Mean Energy: 148177.5156
+[Step 700] Mean Energy: 146311.9375
+[Step 750] Mean Energy: 144622.2656
+[Step 800] Mean Energy: 142994.6875
+[Step 850] Mean Energy: 141448.0312
+[Step 900] Mean Energy: 140024.0938
+[Step 950] Mean Energy: 138609.6719
+[BATCH] Batch 2/9: optimizing splines [1000:2000]
+[Step 0] Mean Energy: 119315.5859
+[Step 50] Mean Energy: 115315.5234
+[Step 100] Mean Energy: 112451.1406
+[Step 150] Mean Energy: 110036.6094
+[Step 200] Mean Energy: 108138.0234
+[Step 250] Mean Energy: 106461.7031
+[Step 300] Mean Energy: 105019.1719
+[Step 350] Mean Energy: 103683.8125
+[Step 400] Mean Energy: 102464.0078
+[Step 450] Mean Energy: 101312.5156
+[Step 500] Mean Energy: 100351.1562
+[Step 550] Mean Energy: 99262.6641
+[Step 600] Mean Energy: 98361.7266
+[Step 650] Mean Energy: 97427.9062
+[Step 700] Mean Energy: 96548.0703
+[Step 750] Mean Energy: 95791.0859
+[Step 800] Mean Energy: 94982.5781
+[Step 850] Mean Energy: 94246.8828
+[Step 900] Mean Energy: 93567.4297
+[Step 950] Mean Energy: 92918.4297
+[BATCH] Batch 3/9: optimizing splines [2000:3000]
+[Step 0] Mean Energy: 125364.7109
+[Step 50] Mean Energy: 120670.1953
+[Step 100] Mean Energy: 117398.8984
+[Step 150] Mean Energy: 114736.1953
+[Step 200] Mean Energy: 112437.8438
+[Step 250] Mean Energy: 110456.7031
+[Step 300] Mean Energy: 108814.1016
+[Step 350] Mean Energy: 107239.7969
+[Step 400] Mean Energy: 105823.1562
+[Step 450] Mean Energy: 104652.0234
+[Step 500] Mean Energy: 103433.7500
+[Step 550] Mean Energy: 102375.5312
+[Step 600] Mean Energy: 101333.3281
+[Step 650] Mean Energy: 100335.8047
+[Step 700] Mean Energy: 99475.9141
+[Step 750] Mean Energy: 98563.4922
+[Step 800] Mean Energy: 97767.1250
+[Step 850] Mean Energy: 96972.0469
+[Step 900] Mean Energy: 96240.2891
+[Step 950] Mean Energy: 95470.7266
+[BATCH] Batch 4/9: optimizing splines [3000:4000]
+[Step 0] Mean Energy: 162090.8750
+[Step 50] Mean Energy: 154104.6719
+[Step 100] Mean Energy: 148546.8906
+[Step 150] Mean Energy: 143848.5781
+[Step 200] Mean Energy: 139929.6719
+[Step 250] Mean Energy: 136532.5781
+[Step 300] Mean Energy: 133540.4844
+[Step 350] Mean Energy: 130854.5000
+[Step 400] Mean Energy: 128508.4062
+[Step 450] Mean Energy: 126316.8672
+[Step 500] Mean Energy: 124386.9141
+[Step 550] Mean Energy: 122583.9531
+[Step 600] Mean Energy: 120872.0938
+[Step 650] Mean Energy: 119397.0078
+[Step 700] Mean Energy: 117914.5000
+[Step 750] Mean Energy: 116733.4375
+[Step 800] Mean Energy: 115537.7656
+[Step 850] Mean Energy: 114438.2656
+[Step 900] Mean Energy: 113471.9531
+[Step 950] Mean Energy: 112491.9219
+[BATCH] Batch 5/9: optimizing splines [4000:5000]
+[Step 0] Mean Energy: 154148.9531
+[Step 50] Mean Energy: 148116.2031
+[Step 100] Mean Energy: 143729.6562
+[Step 150] Mean Energy: 140148.6875
+[Step 200] Mean Energy: 137013.3281
+[Step 250] Mean Energy: 134328.6094
+[Step 300] Mean Energy: 132091.0625
+[Step 350] Mean Energy: 130040.7891
+[Step 400] Mean Energy: 128241.0156
+[Step 450] Mean Energy: 126591.1875
+[Step 500] Mean Energy: 125117.0781
+[Step 550] Mean Energy: 123592.4531
+[Step 600] Mean Energy: 122353.5312
+[Step 650] Mean Energy: 121178.6250
+[Step 700] Mean Energy: 119907.9453
+[Step 750] Mean Energy: 118893.2188
+[Step 800] Mean Energy: 117830.0625
+[Step 850] Mean Energy: 116739.1562
+[Step 900] Mean Energy: 115813.3047
+[Step 950] Mean Energy: 114933.1016
+[BATCH] Batch 6/9: optimizing splines [5000:6000]
+[Step 0] Mean Energy: 162934.5469
+[Step 50] Mean Energy: 156468.6719
+[Step 100] Mean Energy: 151639.2969
+[Step 150] Mean Energy: 147644.8281
+[Step 200] Mean Energy: 144139.8125
+[Step 250] Mean Energy: 141318.0156
+[Step 300] Mean Energy: 138853.5156
+[Step 350] Mean Energy: 136732.2500
+[Step 400] Mean Energy: 134826.6719
+[Step 450] Mean Energy: 132996.4062
+[Step 500] Mean Energy: 131486.1719
+[Step 550] Mean Energy: 129835.7500
+[Step 600] Mean Energy: 128544.8672
+[Step 650] Mean Energy: 127184.1484
+[Step 700] Mean Energy: 125821.3828
+[Step 750] Mean Energy: 124649.4219
+[Step 800] Mean Energy: 123426.7344
+[Step 850] Mean Energy: 122309.7891
+[Step 900] Mean Energy: 121234.0859
+[Step 950] Mean Energy: 120192.5703
+[BATCH] Batch 7/9: optimizing splines [6000:7000]
+[Step 0] Mean Energy: 196247.9844
+[Step 50] Mean Energy: 189519.4375
+[Step 100] Mean Energy: 184217.2500
+[Step 150] Mean Energy: 179863.6562
+[Step 200] Mean Energy: 176025.6250
+[Step 250] Mean Energy: 172724.5000
+[Step 300] Mean Energy: 169635.3438
+[Step 350] Mean Energy: 167058.5000
+[Step 400] Mean Energy: 164487.2344
+[Step 450] Mean Energy: 162152.6406
+[Step 500] Mean Energy: 159963.8438
+[Step 550] Mean Energy: 158038.7031
+[Step 600] Mean Energy: 156149.3125
+[Step 650] Mean Energy: 154446.8281
+[Step 700] Mean Energy: 152704.3750
+[Step 750] Mean Energy: 151205.2188
+[Step 800] Mean Energy: 149712.8125
+[Step 850] Mean Energy: 148325.9375
+[Step 900] Mean Energy: 146973.2812
+[Step 950] Mean Energy: 145785.2812
+[BATCH] Batch 8/9: optimizing splines [7000:8000]
+[Step 0] Mean Energy: 155912.5781
+[Step 50] Mean Energy: 151444.3281
+[Step 100] Mean Energy: 147834.3438
+[Step 150] Mean Energy: 144887.4219
+[Step 200] Mean Energy: 142248.2656
+[Step 250] Mean Energy: 140008.2656
+[Step 300] Mean Energy: 137934.7500
+[Step 350] Mean Energy: 135827.5469
+[Step 400] Mean Energy: 134067.2812
+[Step 450] Mean Energy: 132312.5312
+[Step 500] Mean Energy: 130732.9688
+[Step 550] Mean Energy: 129257.1016
+[Step 600] Mean Energy: 127888.3516
+[Step 650] Mean Energy: 126610.0078
+[Step 700] Mean Energy: 125453.9688
+[Step 750] Mean Energy: 124266.8203
+[Step 800] Mean Energy: 123121.7969
+[Step 850] Mean Energy: 122099.6250
+[Step 900] Mean Energy: 121103.4141
+[Step 950] Mean Energy: 120180.4688
+[BATCH] Batch 9/9: optimizing splines [8000:8776]
+[Step 0] Mean Energy: 148972.8594
+[Step 50] Mean Energy: 144352.3438
+[Step 100] Mean Energy: 140810.9375
+[Step 150] Mean Energy: 137934.1094
+[Step 200] Mean Energy: 135324.2500
+[Step 250] Mean Energy: 132817.7500
+[Step 300] Mean Energy: 130803.1953
+[Step 350] Mean Energy: 128605.1953
+[Step 400] Mean Energy: 126770.6875
+[Step 450] Mean Energy: 124923.3672
+[Step 500] Mean Energy: 123076.8438
+[Step 550] Mean Energy: 121504.4375
+[Step 600] Mean Energy: 119812.4375
+[Step 650] Mean Energy: 118326.0000
+[Step 700] Mean Energy: 116829.9531
+[Step 750] Mean Energy: 115508.4688
+[Step 800] Mean Energy: 114313.5938
+[Step 850] Mean Energy: 113185.6250
+[Step 900] Mean Energy: 112172.0391
+[Step 950] Mean Energy: 111218.9531
+[✓] Saved optimized splines to: experiment/splines_opt_model_seed123/spline_batch_opt_entropy_133.pt
+[✓] Saved initial+optimized spline plot to: experiment/splines_opt_model_seed123/spline_plot_both_entropy_133.png

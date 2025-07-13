@@ -3,8 +3,8 @@
 #BSUB -q gpua100
 #BSUB -W 12:00
 #BSUB -n 1
-#BSUB -R "rusage[mem=6000]"
-#BSUB -M 6000
+#BSUB -R "rusage[mem=40000]"
+#BSUB -M 40000
 #BSUB -R "span[hosts=1]"
 #BSUB -N s204088@dtu.dk
 
@@ -29,6 +29,6 @@ python -m src.optimize \
   --model-path experiment/$model \
   --init-type $init \
   --pair-count 133 \
-  --steps 10 \
-  --batch-size 200 \
+  --steps 1000 \
+  --batch-size 1000 \
   --mc-samples 2
