@@ -10,7 +10,7 @@ from src.train import EVAE, GaussianEncoder, GaussianDecoder, GaussianPrior, mak
 from src.single_decoder.optimize_energy import construct_nullspace_basis
 from src.optimize import GeodesicSplineBatch, compute_energy_mc
 
-def plot_geodesic_matrix(spline_blob, output_path):
+def plot_geodesic_matrix(spline_blob, output_path, seed=None, init_type=None):
     spline_data = spline_blob["spline_data"]
     reps = spline_blob["representatives"]
     if reps is None:
@@ -52,7 +52,7 @@ def plot_geodesic_matrix(spline_blob, output_path):
     sns.heatmap(dist_mat, square=True, xticklabels=labels, yticklabels=labels, cmap="copper", cbar=False)
     plt.xticks(rotation=90, fontsize=4)
     plt.yticks(rotation=0, fontsize=4)
-    plt.title("Geodesic Distance Matrix")
+    plt.title(f"Geodesic Distance Matrix - seed {seed} (init by {init_type})")
     plt.xlabel("Cluster")
     plt.ylabel("Cluster")
     plt.tight_layout()
@@ -174,8 +174,8 @@ def main():
     parser.add_argument("--mode", type=str, choices=["matrix", "cov"], required=True)
     parser.add_argument("--init-type", type=str, default="entropy", choices=["entropy", "euclidean"])
     parser.add_argument("--pair-count", type=int, default=10)
-    parser.add_argument("--seed", type=int, help="Seed number, e.g., 123 for model_seed123.pt")
-    parser.add_argument("--seeds", nargs="*", type=int, default=[12, 123])
+    parser.add_argument("--seed", type=int, help="Seed number, e.g., 123 for model_seed123.pt, for matrix mode")
+    parser.add_argument("--seeds", nargs="*", type=int, default=[12, 123], help="Specify models for cov analysis")
     args = parser.parse_args()
 
     plot_dir = Path("experiment/plots")
@@ -188,7 +188,7 @@ def main():
             return
         spline_blob = torch.load(spline_path)
         plot_path = plot_dir / f"geodesic_matrix_seed{args.seed}_{args.init_type}_{args.pair_count}.png"
-        plot_geodesic_matrix(spline_blob, plot_path)
+        plot_geodesic_matrix(spline_blob, plot_path, seed=args.seed, init_type=args.init_type)
 
     elif args.mode == "cov":
         pairfile = f"experiment/pairs/selected_pairs_{args.pair_count}.json"
