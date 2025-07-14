@@ -141,6 +141,10 @@ def main():
 
     # Data
     data = torch.from_numpy(np.load(args.data_path).astype(np.float32))
+    # print("Data shape:", data.shape) # 23822, 50
+    # print("Per-feature variance:", data.var(dim=0)) # 1737.2992, 1096.1960,  411.3057,  249.8994, etc...
+    # print("Total variance (mean over features):", data.var(dim=0).mean())
+
     n = len(data)
     idx = torch.randperm(n, generator=torch.Generator().manual_seed(args.seed))
     val_len = int(0.1 * n)
