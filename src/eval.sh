@@ -17,4 +17,4 @@ mkdir -p "$HOME/.cache" "$HOME/.config" "$HOME/.huggingface"
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 
-python -m src.eval --mode cov --pair-count 15 --seeds 12 123 1234 12345 456
+python -m src.eval --mode cov --pair-count 15 --seeds 12 123 1234 12345 456 45

@@ -146,7 +146,7 @@ def run_cov_analysis(seeds, decoder_counts, pairfile, model_dir, data_path, outp
         "num_pairs": len(pairs)
     }
 
-    json_path = Path(output_plot).with_name(f"cov_values_{Path(output_plot).stem.split('_')[-1]}.json")
+    json_path = Path(output_plot).with_name(f"cov_values_alldec_{Path(output_plot).stem.split('_')[-1]}.json")
     with open(json_path, "w") as f:
         json.dump(cov_data, f, indent=2)
 
@@ -193,8 +193,8 @@ def main():
     elif args.mode == "cov":
         pairfile = f"experiment/pairs/selected_pairs_{args.pair_count}.json"
         data_path = "data/tasic-pca50.npy"
-        output_plot = f"experiment/plots/cov_plot_{args.pair_count}.png"
-        run_cov_analysis(seeds=args.seeds, decoder_counts=[1, 2, 3], pairfile=pairfile, model_dir="experiment", data_path=data_path, output_plot=output_plot)
+        output_plot = f"experiment/plots/cov_plot_{args.pair_count}_alldec.png"
+        run_cov_analysis(seeds=args.seeds, decoder_counts=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], pairfile=pairfile, model_dir="experiment", data_path=data_path, output_plot=output_plot)
 
 if __name__ == "__main__":
     main()
