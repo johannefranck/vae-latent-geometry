@@ -4,4 +4,15 @@ __pycache__/
 *.pyc
 *.ipynb_checkpoints
 
+# Jupyter
+.ipynb_checkpoints/
 
+# Cache & logs
+.cache/
+*.out
+*.log
+
+# Virtualenv
+venv_geometry/
+.env/
+.venv/
