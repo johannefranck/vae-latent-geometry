@@ -3,10 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
 import argparse
-from pathlib import Path
-from src.vae import VAE
+from src.single_decoder.vae import VAE
 
 import random
 import os

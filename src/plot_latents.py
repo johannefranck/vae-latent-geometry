@@ -3,27 +3,13 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy
-from src.train import GaussianPrior, GaussianEncoder, GaussianDecoder, EVAE
+from src.train import GaussianPrior, GaussianEncoder, GaussianDecoder, EVAE, make_decoder_net, make_encoder_net
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def make_encoder_net(input_dim, latent_dim):
-    return torch.nn.Sequential(
-        torch.nn.Linear(input_dim, 256), torch.nn.SiLU(),
-        torch.nn.LayerNorm(256),
-        torch.nn.Linear(256, 128), torch.nn.SiLU(),
-        torch.nn.LayerNorm(128),
-        torch.nn.Linear(128, 2 * latent_dim)
-    )
-
-def make_decoder_net(latent_dim, output_dim):
-    return torch.nn.Sequential(
-        torch.nn.Linear(latent_dim, 128), torch.nn.ReLU(),
-        torch.nn.Linear(128, 128), torch.nn.ReLU(),
-        torch.nn.Linear(128, output_dim)
-    )
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, required=True)
+    parser.add_argument("--model-path", type=str, required=True) #eg experiment/model_seed12.pt
     parser.add_argument("--data-path", type=str, default="data/tasic-pca50.npy")
     parser.add_argument("--color-path", type=str, default="data/tasic-colors.npy")
     parser.add_argument("--latent-dim", type=int, default=2)
@@ -48,6 +34,10 @@ def main():
     state_dict = torch.load(args.model_path, map_location=device)
     model.load_state_dict(state_dict)
     model.eval()
+
+    # extract the seed number from model_path
+    seed = args.model_path.split("seed")[-1].split(".")[0]
+    print(f"Loaded model with seed: {seed}")
 
     # Load data
     data = np.load(args.data_path).astype(np.float32)
@@ -92,17 +82,28 @@ def main():
     # --------- Plot ---------
     fig, ax = plt.subplots(figsize=(7, 7))  # Square figure
 
-    c = ax.pcolormesh(Z1.cpu().numpy(), Z2.cpu().numpy(),
-                      uncertainty_2d, cmap="viridis", shading="auto", rasterized=True)
-    plt.colorbar(c, ax=ax, label="Decoder uncertainty (std)")
+    # Create an axis divider for aligned colorbar
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
 
+    # Background heatmap
+    c = ax.pcolormesh(Z1.cpu().numpy(), Z2.cpu().numpy(),
+                    uncertainty_2d, cmap="viridis", shading="auto", rasterized=True)
+
+    # Colorbar that matches plot height
+    plt.colorbar(c, cax=cax, label="Decoder uncertainty (std)")
+
+    # Overlay latents
     ax.scatter(latents[:, 0], latents[:, 1], c=colors, s=5, alpha=0.8, linewidth=0)
+
+    # Formatting
     ax.set_xlim(z1_min, z1_max)
     ax.set_ylim(z2_min, z2_max)
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlabel("z₁")
     ax.set_ylabel("z₂")
-    ax.set_title("Latent space with decoder uncertainty background")
+    ax.set_title(f"Latent space ensmble VAE (seed {seed})")
+
     plt.tight_layout()
     plt.savefig(args.save_path, dpi=300)
     print(f"Saved latent plot with uncertainty to: {args.save_path}")

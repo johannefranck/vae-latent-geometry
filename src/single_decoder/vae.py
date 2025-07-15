@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.distributions as td
-from copy import deepcopy
 import random
 
 class GaussianPrior(nn.Module):

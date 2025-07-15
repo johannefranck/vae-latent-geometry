@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import argparse
-import json
 from pathlib import Path
-from src.vae import VAE
+from src.single_decoder.vae import VAE
 from src.single_decoder.optimize_energy import construct_nullspace_basis
 
 def set_seed(seed=12):
@@ -58,7 +57,7 @@ def compute_energy(spline, decoder, t_vals):
     return energy
 
 def main(seed, pairfile, batch_size=250):
-    pair_tag = Path(pairfile).stem.replace("selected_pairs_", "")  # e.g. "133"
+    pair_tag = Path(pairfile).stem.replace("selected_pairs_", "")  # e.g. "123"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_default_dtype(torch.float32)
@@ -130,4 +129,4 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--pairfile", type=str, required=True, help="selected_pairs_*.json")
     args = parser.parse_args()
-    main(args.seed, args.pairfile, batch_size=5000)  # Adjust batch size as needed
+    main(args.seed, args.pairfile, batch_size=500)  # Adjust batch size as needed

@@ -7,7 +7,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader, random_split
-from src.vae import VAE
+from src.single_decoder.vae import VAE
 
 # single vae training
 def main():
