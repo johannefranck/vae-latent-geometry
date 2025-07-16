@@ -16,3 +16,6 @@ __pycache__/
 venv_geometry/
 .env/
 .venv/
+
+# ignore shell scripts
+*.sh
