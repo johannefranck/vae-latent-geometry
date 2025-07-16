@@ -2,6 +2,8 @@
 
 ## Computing Identifiable Distances at a Large Scale
 
+Link to project explainer [notebook](https://github.com/johannefranck/vae-latent-geometry/blob/main/notebooks/geodesics.ipynb).
+
 Aim of measuring geodesics. Inspired by this project by Syrota et al.: https://github.com/mustass/identifiable-latent-metric-space
 
 **Aim**: Implementing algorithms at large scale for approximating distances. 
@@ -10,7 +12,7 @@ Aim of measuring geodesics. Inspired by this project by Syrota et al.: https://g
 
 
 
-Geodesics: Single decoder (initial pipeline):
+Geodesics: Single decoder (suggestions to run pipeline):
 * dir src/single_decoder/ 
     * src/select_representative_pairs.py => selected_pairs.json. Samples one point from n_max different classes (bound 133 unique).
     * init_spline.py => spline_batch_seedX.pt
@@ -34,7 +36,7 @@ Output visuals src/plots/single_decoder/. Examples below:
 
 The numerical similarity was hypothesized to be more similar... Therefore, we train ensemble VAEs to do geodesic approximations.
 
-Geodesics: Ensemble (not done!):
+Geodesics: Ensemble (suggestions to run pipeline):
 * dir src/ 
     * select_representative_pairs.py => selected_pairs.json. Samples one point from n_max different classes (bound 133 unique).
     * train evaes train.py
